@@ -53,7 +53,8 @@ fun HomeView(name: String?, navController: NavController) {
         Column(
             modifier = Modifier
                 .fillMaxHeight()
-                .width(250.dp),
+                .width(250.dp)
+                .padding(start = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -84,7 +85,7 @@ fun HomeView(name: String?, navController: NavController) {
                     .padding(10.dp)
                     .fillMaxWidth()
                     .border(2.dp, Color.Blue)
-                    .height(500.dp),
+                    .height(600.dp),
 //                shape = RoundedCornerShape(topStart = 16.dp, bottomEnd = 16.dp),
 //                backgroundColor = Color.Gray,
                 elevation = 10.dp,
@@ -131,7 +132,7 @@ fun HomeView(name: String?, navController: NavController) {
             AlertDialogSample(navController)
         }
 
-        LazyVerticalGrid(columns = GridCells.Adaptive(500.dp)) {
+        LazyVerticalGrid(columns = GridCells.Adaptive(450.dp)) {
             items(data.value) { item ->
                 Box(
                     modifier = Modifier

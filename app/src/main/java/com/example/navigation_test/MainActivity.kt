@@ -36,6 +36,13 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.Text
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.draw.shadow
 
 
 class MainActivity : ComponentActivity() {
@@ -149,78 +156,128 @@ fun MainView(email: String?, signOutClicked: () -> Unit) {
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
     Scaffold(
-        scaffoldState = scaffoldState,
-        topBar = {
-            TopAppBar(
-                title = { Text(text = "心律檢視") },
-                backgroundColor = MaterialTheme.colors.primary,
-                contentColor = MaterialTheme.colors.onPrimary,
-                navigationIcon = {
-                    IconButton(onClick = { scope.launch { scaffoldState.drawerState.open() } }) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Toggle drawer"
-                        )
-                    }
-                },
-                actions = {
-                    Row(
-                        modifier = Modifier.padding(start = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (email != null) {
-                            Text(
-                                text = email,
-                                fontSize = 20.sp,
-                                modifier = Modifier.padding(end = 20.dp)
-                            )
-                        }
-                        Button(
-                            modifier = Modifier
-                                .align(Alignment.CenterVertically)
-                                .padding(end = 50.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                backgroundColor = Color.White,
-                                contentColor = Color.Black
-                            ),
-                            onClick = { signOutClicked() }
-                        ) {
-                            Text(text = "登出", fontSize = 15.sp)
+//        scaffoldState = scaffoldState,
+//        topBar = {
+//            TopAppBar(
+//                title = { Text(text = "心律檢視") },
+//                backgroundColor = MaterialTheme.colors.primary,
+//                contentColor = MaterialTheme.colors.onPrimary,
+//                navigationIcon = {
+//                    IconButton(onClick = { scope.launch { scaffoldState.drawerState.open() } }) {
+//                        Icon(
+//                            imageVector = Icons.Default.Menu,
+//                            contentDescription = "Toggle drawer"
+//                        )
+//                    }
+//                },
+//                actions = {
+//                    Row(
+//                        modifier = Modifier.padding(start = 20.dp),
+//                        verticalAlignment = Alignment.CenterVertically
+//                    ) {
+//                        if (email != null) {
+//                            Text(
+//                                text = email,
+//                                fontSize = 20.sp,
+//                                modifier = Modifier.padding(end = 20.dp)
+//                            )
+//                        }
+//                        Button(
+//                            modifier = Modifier
+//                                .align(Alignment.CenterVertically)
+//                                .padding(end = 50.dp),
+//                            colors = ButtonDefaults.buttonColors(
+//                                backgroundColor = Color.White,
+//                                contentColor = Color.Black
+//                            ),
+//                            onClick = { signOutClicked() }
+//                        ) {
+//                            Text(text = "登出", fontSize = 15.sp)
+//                        }
+//                    }
+//                }
+//            )
+//        }
+//        drawerGesturesEnabled = scaffoldState.drawerState.isOpen,
+//        drawerContent = {
+//            DrawerHeader()
+//            DrawerBody(items = listOf(
+//                MenuItem(
+//                    id = "home/ ",
+//                    title = "首頁",
+//                    contentDescription = "Go to home screen",
+//                    icon = Icons.Default.Home
+//                ),
+//                MenuItem(
+//                    id = "settings",
+//                    title = "設定",
+//                    contentDescription = "Go to settings screen",
+//                    icon = Icons.Default.Settings
+//                ),
+//                MenuItem(
+//                    id = "help",
+//                    title = "幫助頁面",
+//                    contentDescription = "Go to help screen",
+//                    icon = Icons.Default.Notifications
+//                )
+//            ), onItemClick = {
+//                navController.navigate(it.id)
+//                scope.launch {
+//                    scaffoldState.drawerState.close()
+//                }
+//            })
+//        }
+    ) {
+        Row{
+            NavRail(navController = navController) { signOutClicked() }
+            Navigation(navController = navController)
+        }
+    }
+}
+
+@Composable
+fun NavRail(navController: NavHostController,signOutClicked: () -> Unit) {
+    var selectedItem by remember { mutableStateOf(0) }
+    val items = listOf("首頁", "設定", "幫助", "登出")
+    val icons = listOf(Icons.Filled.Home, Icons.Filled.Settings, Icons.Filled.Info, Icons.Filled.ExitToApp)
+    NavigationRail(
+        modifier = Modifier.shadow(
+            elevation = 15.dp,
+            shape = RoundedCornerShape(4.dp),
+            clip = true
+        ),
+        header = {
+            Text(
+                text = "功能",
+                style = MaterialTheme.typography.h6,
+                modifier = Modifier.padding(top = 16.dp , start = 16.dp ,end= 16.dp , bottom = 45.dp)
+            )
+        },
+        containerColor = Color(0xFFFBF9FF)
+    ) {
+        items.forEachIndexed { index, item ->
+            NavigationRailItem(
+                modifier = Modifier.padding(top = 5.dp, end = 5.dp),
+                icon = { Icon(icons[index], contentDescription = item, modifier = Modifier.size(25.dp))},
+                label = { Text(item, fontSize = 14.sp) },
+                selected = selectedItem == index,
+                onClick = {
+                    selectedItem = index
+                    // 根據需要進行導航
+                    when (index) {
+                        0 -> navController.navigate("home/ ")
+                        1 -> navController.navigate("settings")
+                        2 -> navController.navigate("help")
+                        3 -> {
+                            signOutClicked()
                         }
                     }
                 }
             )
-        },
-        drawerGesturesEnabled = scaffoldState.drawerState.isOpen,
-        drawerContent = {
-            DrawerHeader()
-            DrawerBody(items = listOf(
-                MenuItem(
-                    id = "home/ ",
-                    title = "首頁",
-                    contentDescription = "Go to home screen",
-                    icon = Icons.Default.Home
-                ),
-                MenuItem(
-                    id = "settings",
-                    title = "設定",
-                    contentDescription = "Go to settings screen",
-                    icon = Icons.Default.Settings
-                ),
-                MenuItem(
-                    id = "help",
-                    title = "幫助頁面",
-                    contentDescription = "Go to help screen",
-                    icon = Icons.Default.Notifications
-                )
-            ), onItemClick = {
-                navController.navigate(it.id)
-                scope.launch {
-                    scaffoldState.drawerState.close()
-                }
-            })
-        }) {
-        Navigation(navController = navController)
+            if (index == items.size - 2) { // 倒數第二個項目
+                Spacer(Modifier.height(400.dp)) // 使用 Spacer 產生間隔
+            }
+        }
     }
 }
 
@@ -243,12 +300,11 @@ fun Navigation(navController: NavHostController) {
         composable("settings") {
             SettingsScreen()
         }
-        composable( "waiting"){
+        composable("waiting") {
             Waiting()
         }
     }
 }
-
 
 
 @Composable
