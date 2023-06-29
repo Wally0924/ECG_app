@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1055882360274",
+    "project_id": "navigation-test-faf5f",
+    "storage_bucket": "navigation-test-faf5f.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1055882360274:android:d050d96f83ca4b6887040b",
+        "android_client_info": {
+          "package_name": "com.example.navigation_test"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1055882360274-3s7drhrai523rv0vhjhqvr0d5nsir3bi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFpKfmxFb3fQZ1ZrSSlhcVmU06SvxW59Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1055882360274-3s7drhrai523rv0vhjhqvr0d5nsir3bi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
