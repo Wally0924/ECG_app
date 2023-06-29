@@ -249,30 +249,7 @@ fun Navigation(navController: NavHostController) {
     }
 }
 
-//@Composable
-//fun HelpScreen() {
-//    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.lotie))
-//    var isPlaying by remember { mutableStateOf(true) }
-//
-//    val progress by animateLottieCompositionAsState(composition = composition,
-//    isPlaying = isPlaying)
-//
-//    LaunchedEffect(key1 = progress){
-//        if (progress == 0f){
-//            isPlaying = true
-//        }
-//        if (progress == 1f){
-//            isPlaying = true
-//        }
-//    }
-//
-//    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-//        LottieAnimation(modifier = Modifier.size(400.dp), composition = composition, progress = progress)
-//        Button(onClick = { isPlaying = false}){
-//            Text(text="Play Stop")
-//        }
-//    }
-//}
+
 
 @Composable
 fun HelpScreen() {
