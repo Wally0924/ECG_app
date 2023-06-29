@@ -244,7 +244,7 @@ fun Navigation(navController: NavHostController) {
             SettingsScreen()
         }
         composable( "waiting"){
-            Waiting(navController)
+            Waiting()
         }
     }
 }
