@@ -209,7 +209,7 @@ fun MainView(email: String?, signOutClicked: () -> Unit) {
                 ),
                 MenuItem(
                     id = "help",
-                    title = "幫助",
+                    title = "幫助頁面",
                     contentDescription = "Go to help screen",
                     icon = Icons.Default.Notifications
                 )
