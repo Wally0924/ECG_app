@@ -2,6 +2,7 @@ package com.example.navigation_test
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,7 +45,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.draw.shadow
-
+import androidx.compose.material3.SmallTopAppBar
+import androidx.compose.ui.modifier.modifierLocalConsumer
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ListItem
 
 class MainActivity : ComponentActivity() {
     private val Lgwith = registerForActivityResult(
@@ -149,18 +154,21 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
 fun MainView(email: String?, signOutClicked: () -> Unit) {
     val navController = rememberNavController()
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
-    Scaffold(
+    Row {
+        NavRail(navController = navController) { signOutClicked() }
+        Scaffold(
 //        scaffoldState = scaffoldState,
-//        topBar = {
-//            TopAppBar(
-//                title = { Text(text = "心律檢視") },
-//                backgroundColor = MaterialTheme.colors.primary,
+            topBar = {
+                TopAppBar(
+                    title = { Text(text = "") },
+                    backgroundColor = Color(0xFF8E58E9),
 //                contentColor = MaterialTheme.colors.onPrimary,
 //                navigationIcon = {
 //                    IconButton(onClick = { scope.launch { scaffoldState.drawerState.open() } }) {
@@ -170,34 +178,29 @@ fun MainView(email: String?, signOutClicked: () -> Unit) {
 //                        )
 //                    }
 //                },
-//                actions = {
-//                    Row(
-//                        modifier = Modifier.padding(start = 20.dp),
-//                        verticalAlignment = Alignment.CenterVertically
-//                    ) {
-//                        if (email != null) {
-//                            Text(
-//                                text = email,
-//                                fontSize = 20.sp,
-//                                modifier = Modifier.padding(end = 20.dp)
-//                            )
-//                        }
-//                        Button(
-//                            modifier = Modifier
-//                                .align(Alignment.CenterVertically)
-//                                .padding(end = 50.dp),
-//                            colors = ButtonDefaults.buttonColors(
-//                                backgroundColor = Color.White,
-//                                contentColor = Color.Black
-//                            ),
-//                            onClick = { signOutClicked() }
-//                        ) {
-//                            Text(text = "登出", fontSize = 15.sp)
-//                        }
-//                    }
-//                }
-//            )
-//        }
+                    actions = {
+                        Row(
+                            modifier = Modifier.padding(start = 20.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Filled.Person,
+                                contentDescription = "user",
+                                modifier = Modifier
+                                    .size(35.dp)
+                                    .padding(end = 6.dp)
+                            )
+                            if (email != null) {
+                                Text(
+                                    text = email,
+                                    fontSize = 20.sp,
+                                    modifier = Modifier.padding(end = 20.dp)
+                                )
+                            }
+                        }
+                    }
+                )
+            }
 //        drawerGesturesEnabled = scaffoldState.drawerState.isOpen,
 //        drawerContent = {
 //            DrawerHeader()
@@ -227,55 +230,65 @@ fun MainView(email: String?, signOutClicked: () -> Unit) {
 //                }
 //            })
 //        }
-    ) {
-        Row{
-            NavRail(navController = navController) { signOutClicked() }
+        ) {
             Navigation(navController = navController)
         }
     }
 }
 
 @Composable
-fun NavRail(navController: NavHostController,signOutClicked: () -> Unit) {
+fun NavRail(navController: NavHostController, signOutClicked: () -> Unit) {
     var selectedItem by remember { mutableStateOf(0) }
-    val items = listOf("首頁", "設定", "幫助", "登出")
-    val icons = listOf(Icons.Filled.Home, Icons.Filled.Settings, Icons.Filled.Info, Icons.Filled.ExitToApp)
+    val items = listOf("首頁", "通知", "設定", "幫助", "登出")
+    val icons = listOf(
+        Icons.Filled.Home,
+        Icons.Filled.Notifications,
+        Icons.Filled.Settings,
+        Icons.Filled.Info,
+        Icons.Filled.ExitToApp
+    )
     NavigationRail(
         modifier = Modifier.shadow(
             elevation = 15.dp,
-            shape = RoundedCornerShape(4.dp),
             clip = true
         ),
         header = {
             Text(
                 text = "功能",
                 style = MaterialTheme.typography.h6,
-                modifier = Modifier.padding(top = 16.dp , start = 16.dp ,end= 16.dp , bottom = 45.dp)
+                modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 45.dp)
             )
         },
-        containerColor = Color(0xFFFBF9FF)
+        containerColor = Color(0xFFF5EFFF)
     ) {
         items.forEachIndexed { index, item ->
             NavigationRailItem(
                 modifier = Modifier.padding(top = 5.dp, end = 5.dp),
-                icon = { Icon(icons[index], contentDescription = item, modifier = Modifier.size(25.dp))},
-                label = { Text(item, fontSize = 14.sp) },
+                icon = {
+                    Icon(
+                        icons[index],
+                        contentDescription = item,
+                        modifier = Modifier.size(25.dp)
+                    )
+                },
+                label = { Text(item, fontWeight = FontWeight.Bold, fontSize = 15.sp) },
                 selected = selectedItem == index,
                 onClick = {
                     selectedItem = index
                     // 根據需要進行導航
                     when (index) {
                         0 -> navController.navigate("home/ ")
-                        1 -> navController.navigate("settings")
-                        2 -> navController.navigate("help")
-                        3 -> {
+                        1 -> navController.navigate("notice")
+                        2 -> navController.navigate("settings")
+                        3 -> navController.navigate("help")
+                        4 -> {
                             signOutClicked()
                         }
                     }
                 }
             )
             if (index == items.size - 2) { // 倒數第二個項目
-                Spacer(Modifier.height(400.dp)) // 使用 Spacer 產生間隔
+                Spacer(Modifier.height(300.dp)) // 使用 Spacer 產生間隔
             }
         }
     }
@@ -303,35 +316,16 @@ fun Navigation(navController: NavHostController) {
         composable("waiting") {
             Waiting()
         }
+        composable("notice"){
+            NoticeView()
+        }
     }
 }
 
 
 @Composable
 fun HelpScreen() {
-    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.lotie))
-    var isPlaying by remember { mutableStateOf(true) }
 
-    val progress by animateLottieCompositionAsState(
-        composition = composition,
-        isPlaying = isPlaying,
-        iterations = LottieConstants.IterateForever
-    )
-
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        LottieAnimation(
-            modifier = Modifier.size(400.dp),
-            composition = composition,
-            progress = progress
-        )
-        Button(onClick = { isPlaying = !isPlaying }) {
-            Text(text = if (isPlaying) "停止" else "播放")
-        }
-    }
 }
 
 

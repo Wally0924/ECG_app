@@ -1,18 +1,33 @@
 package com.example.navigation_test
 
-import android.content.ContentValues
-import android.util.Log
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.material.Card
+import androidx.compose.material.Divider
+import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,12 +38,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.google.firebase.firestore.FirebaseFirestore
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorderAfterLongPress
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
-import java.lang.Integer.max
 
 
 //首頁
@@ -54,7 +67,7 @@ fun HomeView(name: String?, navController: NavController) {
             modifier = Modifier
                 .fillMaxHeight()
                 .width(250.dp)
-                .padding(start = 20.dp),
+                .padding(start = 15.dp , end = 5.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -63,7 +76,7 @@ fun HomeView(name: String?, navController: NavController) {
                 modifier = Modifier
                     .padding(10.dp)
                     .width(200.dp)
-                    .height(48.dp),
+                    .weight(1f),
                 elevation = 10.dp
             ) {
                 Column(
@@ -85,7 +98,7 @@ fun HomeView(name: String?, navController: NavController) {
                     .padding(10.dp)
                     .fillMaxWidth()
                     .border(2.dp, Color.Blue)
-                    .height(600.dp),
+                    .weight(8f),
 //                shape = RoundedCornerShape(topStart = 16.dp, bottomEnd = 16.dp),
 //                backgroundColor = Color.Gray,
                 elevation = 10.dp,
@@ -129,7 +142,9 @@ fun HomeView(name: String?, navController: NavController) {
                     }
                 }
             }
-            AlertDialogSample(navController)
+            Row(modifier = Modifier.weight(1f)) {
+                AlertDialogSample(navController)
+            }
         }
 
         LazyVerticalGrid(columns = GridCells.Adaptive(450.dp)) {
