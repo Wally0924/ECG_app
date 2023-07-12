@@ -19,7 +19,6 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -138,7 +137,8 @@ fun SignInView(
                 onClick = { loginUser(navController) },
                 colors = ButtonDefaults.buttonColors(
                     backgroundColor = Color.White,
-                    contentColor = Color.Black)
+                    contentColor = Color.Black
+                )
             ) {
                 Row(
                     modifier = Modifier.fillMaxSize(),
@@ -172,7 +172,8 @@ fun SignInView(
                 onClick = { navController.navigate("register") },
                 colors = ButtonDefaults.buttonColors(
                     backgroundColor = Color.White,
-                    contentColor = Color.Black)
+                    contentColor = Color.Black
+                )
             ) {
                 Row(
                     modifier = Modifier.fillMaxSize(),
@@ -203,10 +204,13 @@ fun SignInView(
                     .height(50.dp),
                 shape = RoundedCornerShape(10.dp),
                 border = BorderStroke(width = 1.5.dp, color = Color.Black),
-                onClick = { signInClicked() },
+                onClick = {
+                    signInClicked()
+                },
                 colors = ButtonDefaults.buttonColors(
                     backgroundColor = Color.White,
-                    contentColor = Color.Black)
+                    contentColor = Color.Black
+                )
             ) {
                 Row(
                     modifier = Modifier.fillMaxSize(),
@@ -218,7 +222,7 @@ fun SignInView(
                             .size(30.dp)
                             .padding(0.dp)
                             .align(Alignment.CenterVertically)
-                            .border(2.dp,Color.Black),
+                            .border(2.dp, Color.Black),
                         painter = painterResource(id = R.drawable.baseline_g_mobiledata_24),
                         contentDescription = "google sign"
                     )

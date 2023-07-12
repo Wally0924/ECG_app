@@ -1,6 +1,11 @@
 package com.example.navigation_test
 
+import android.Manifest
+import android.app.Activity
 import android.content.ContentValues
+import android.content.Context
+import android.content.pm.PackageManager
+import android.telephony.SmsManager
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
@@ -16,11 +21,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
@@ -43,6 +51,11 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
@@ -175,7 +188,9 @@ fun PatientList(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class,
+    ExperimentalPermissionsApi::class
+)
 @Composable
 fun PatientChatRoom(patient: Patient) {
     var name by remember { mutableStateOf("") }
@@ -183,12 +198,42 @@ fun PatientChatRoom(patient: Patient) {
     var address by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
+    var emergencyContact by remember { mutableStateOf("") } // 新增的緊急聯絡人字段
     val keyboardController = LocalSoftwareKeyboardController.current
     val radioOptions = listOf("LBBB", "RBBB", "VPC", "APC")
     val (selectedOption, onOptionSelected) = remember { mutableStateOf(radioOptions[0]) }
     val context = LocalContext.current
+    var showEmergencyContactField by remember { mutableStateOf(false) } // 控制是否顯示緊急聯絡人欄位
+    val permissionState = rememberPermissionState(Manifest.permission.SEND_SMS)
 
-    fun onSubmitClicked(patient:Patient) {
+    val sendSms = { phoneNumber: String ->
+        val smsManager = SmsManager.getDefault()
+        val message = "危險通知 病患 $name 目前心律呈現"
+        if (phoneNumber.isNotEmpty()) {
+            smsManager.sendTextMessage(phoneNumber, null, message, null, null)
+            Toast.makeText(context, "簡訊已送出", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "請輸入手機號碼", Toast.LENGTH_SHORT).show()
+        }
+    }
+    fun requestSmsPermission(context: Context, onPermissionResult: (Boolean) -> Unit) {
+        if (ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.SEND_SMS
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            onPermissionResult(true)
+        } else {
+            ActivityCompat.requestPermissions(
+                context as Activity,
+                arrayOf(android.Manifest.permission.SEND_SMS),
+                100
+            )
+        }
+    }
+
+
+    fun onSubmitClicked(patient: Patient) {
         val db = FirebaseFirestore.getInstance()
         val formData = FormData(
             name = name,
@@ -198,7 +243,7 @@ fun PatientChatRoom(patient: Patient) {
             rhythmType = selectedOption,
             note = note
         )
-        // 將 formData 物件存入 Firestore
+        // 將formData物件存入Firestore
         db.collection("USER").document(patient.id).collection("Notice")
             .add(formData)
             .addOnSuccessListener {
@@ -210,200 +255,250 @@ fun PatientChatRoom(patient: Patient) {
                 Toast.makeText(context, "通知失敗", Toast.LENGTH_SHORT).show()
             }
     }
+
     LaunchedEffect(patient) {
         name = patient.name
         email = patient.email
         address = patient.address
         phone = patient.phone
     }
-    Text(
-        text = "發送通知",
-        style = MaterialTheme.typography.headlineLarge,
-        modifier = Modifier.padding(16.dp)
-    )
-    Divider(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 10.dp, end = 10.dp, bottom = 20.dp),
-        thickness = 2.dp
-    )
-    Row(modifier = Modifier.fillMaxWidth()) {
-        Column(
+    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        Text(
+            text = "發送通知",
+            style = MaterialTheme.typography.headlineLarge,
+            modifier = Modifier.padding(16.dp)
+        )
+        Divider(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+                .padding(start = 10.dp, end = 10.dp, bottom = 20.dp),
+            thickness = 2.dp
+        )
 
-            OutlinedTextField(
-                value = name,
-                onValueChange = { /* 不需要執行任何操作 */ },
-                label = { Text("姓名") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                readOnly = true,
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "姓名圖示"
-                    )
-                }
-            )
-            Spacer(
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(20.dp)
-            )
-            OutlinedTextField(
-                value = email,
-                onValueChange = { /* 不需要執行任何操作 */ },
-                label = { Text("電子郵件") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                readOnly = true,
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Email,
-                        contentDescription = "電子郵件圖示"
-                    )
-                }
-            )
-
-        }
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            OutlinedTextField(
-                value = address,
-                onValueChange = { /* 不需要執行任何操作 */ },
-                label = { Text("地址") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                readOnly = true,
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = "地址圖示"
-                    )
-                }
-            )
-            Spacer(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(20.dp)
-            )
-
-            OutlinedTextField(
-                value = phone,
-                onValueChange = { /* 不需要執行任何操作 */ },
-                label = { Text("電話") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                readOnly = true,
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Phone,
-                        contentDescription = "電話圖示"
-                    )
-                }
-            )
-        }
-    }
-    Spacer(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(20.dp)
-    )
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = "心律不整類型",
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier
-                    .padding(start = 20.dp)
-            )
-            Row(
-                Modifier
-                    .selectableGroup()
-                    .padding(start = 30.dp, end = 30.dp)
+                    .weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                radioOptions.forEach { text ->
-                    Row(
-                        Modifier
-                            .weight(1f)
-                            .height(40.dp)
-                            .selectable(
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { /* 不需要執行任何操作 */ },
+                    label = { Text("姓名") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    readOnly = true,
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "姓名圖示"
+                        )
+                    }
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { /* 不需要執行任何操作 */ },
+                    label = { Text("電子郵件") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    readOnly = true,
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Email,
+                            contentDescription = "電子郵件圖示"
+                        )
+                    }
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                OutlinedTextField(
+                    value = address,
+                    onValueChange = { /* 不需要執行任何操作 */ },
+                    label = { Text("地址") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    readOnly = true,
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = "地址圖示"
+                        )
+                    }
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = { /* 不需要執行任何操作 */ },
+                    label = { Text("電話") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    readOnly = true,
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Phone,
+                            contentDescription = "電話圖示"
+                        )
+                    }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "心律不整類型",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(start = 20.dp)
+                )
+                Row(
+                    Modifier
+                        .selectableGroup()
+                        .padding(start = 30.dp, end = 30.dp)
+                ) {
+                    radioOptions.forEach { text ->
+                        Row(
+                            Modifier
+                                .weight(1f)
+                                .height(40.dp)
+                                .selectable(
+                                    selected = (text == selectedOption),
+                                    onClick = { onOptionSelected(text) },
+                                    role = Role.RadioButton
+                                ),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
                                 selected = (text == selectedOption),
-                                onClick = { onOptionSelected(text) },
-                                role = Role.RadioButton
-                            ),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = (text == selectedOption),
-                            onClick = null
-                        )
-                        Text(
-                            text = text,
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(start = 16.dp)
-                        )
+                                onClick = null
+                            )
+                            Text(
+                                text = text,
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(start = 16.dp)
+                            )
+                        }
                     }
                 }
             }
         }
-    }
-    Spacer(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(20.dp)
-    )
-    Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center) {
-        Column(
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Row(
             modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalArrangement = Arrangement.Center
         ) {
-            OutlinedTextField(
-                value = note,
-                onValueChange = {
-                    note = it
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
-                    .padding(start = 35.dp, end = 35.dp),
-                label = { Text("備註") },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        // close the keyboard
-                        keyboardController?.hide()
-                    }
-                )
-            )
-            Spacer(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(20.dp)
-            )
-            Button(
-                onClick = { onSubmitClicked(patient)},
-                contentPadding = ButtonDefaults.ButtonWithIconContentPadding
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("送出" , fontSize = 16.sp)
-                Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                Icon(
-                    Icons.Filled.Send,
-                    contentDescription = "Localized description",
-                    modifier = Modifier.size(ButtonDefaults.IconSize)
+                Button(
+                    onClick = {
+                        showEmergencyContactField = !showEmergencyContactField
+                        emergencyContact = ""
+                    },
+                    contentPadding = ButtonDefaults.ButtonWithIconContentPadding
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AddCircle,
+                        contentDescription = "新增緊急聯絡人按鈕"
+                    )
+                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                    Text("新增緊急聯絡人通知", fontSize = 16.sp)
+                }
+                if (showEmergencyContactField) { // 如果需要顯示緊急聯絡人欄位，則顯示TextField
+                    OutlinedTextField(
+                        value = emergencyContact,
+                        onValueChange = { emergencyContact = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .padding(horizontal = 35.dp),
+                        label = { Text("緊急聯絡人電話") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                // 關閉鍵盤
+                                keyboardController?.hide()
+                            }
+                        ),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Phone,
+                                contentDescription = "緊急聯絡人圖示"
+                            )
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(15.dp))
+                }
+
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .padding(start = 35.dp, end = 35.dp),
+                    label = { Text("備註") },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            // 關閉鍵盤
+                            keyboardController?.hide()
+                        }
+                    )
                 )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Button(
+                    onClick = { onSubmitClicked(patient)
+                        if (permissionState.status.isGranted) {
+                            sendSms(emergencyContact)
+                        } else {
+                            requestSmsPermission(context) { granted ->
+                                if (granted) {
+                                    sendSms(emergencyContact)
+                                } else {
+                                    Toast.makeText(context, "簡訊發送權限被拒絕", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }},
+                    contentPadding = ButtonDefaults.ButtonWithIconContentPadding
+                ) {
+                    Text("送出", fontSize = 16.sp)
+                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                    Icon(
+                        imageVector = Icons.Filled.Send,
+                        contentDescription = "送出按鈕",
+                        modifier = Modifier.size(ButtonDefaults.IconSize)
+                    )
+                }
             }
         }
     }
 }
+
+
 
 
 

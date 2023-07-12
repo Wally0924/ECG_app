@@ -1,6 +1,9 @@
 package com.example.navigation_test
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.WindowManager
 import android.widget.Toast
@@ -9,6 +12,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -49,8 +54,17 @@ import androidx.compose.material3.SmallTopAppBar
 import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ListItem
+import androidx.compose.ui.text.input.ImeAction
+import android.telephony.SmsManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 
 class MainActivity : ComponentActivity() {
+    private lateinit var mAuth: FirebaseAuth
     private val Lgwith = registerForActivityResult(
         FirebaseAuthUIActivityResultContract()
     ) { res ->
@@ -58,7 +72,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun onSignInResult(result: FirebaseAuthUIAuthenticationResult) {
-        val response = result.idpResponse
         if (result.resultCode == RESULT_OK) {
             // Successfully signed in
             val user = FirebaseAuth.getInstance().currentUser
@@ -75,7 +88,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private lateinit var mAuth: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -316,17 +328,89 @@ fun Navigation(navController: NavHostController) {
         composable("waiting") {
             Waiting()
         }
-        composable("notice"){
+        composable("notice") {
             NoticeView()
         }
     }
 }
 
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun HelpScreen() {
+    var phoneNumber by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val permissionState = rememberPermissionState(android.Manifest.permission.SEND_SMS)
 
+    val sendSms = { phoneNumber: String ->
+        val smsManager = SmsManager.getDefault()
+        val message = "這是測試簡訊"
+        if (!phoneNumber.isEmpty()) {
+            smsManager.sendTextMessage(phoneNumber, null, message, null, null)
+            Toast.makeText(context, "簡訊已送出", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "請輸入手機號碼", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        TextField(
+            value = phoneNumber,
+            onValueChange = { phoneNumber = it },
+            label = { Text("手機號碼") },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+            keyboardActions = KeyboardActions(
+                onSend = { sendSms(phoneNumber) }
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                if (permissionState.status.isGranted) {
+                    sendSms(phoneNumber)
+                } else {
+                    requestSmsPermission(context) { granted ->
+                        if (granted) {
+                            sendSms(phoneNumber)
+                        } else {
+                            Toast.makeText(context, "簡訊發送權限被拒絕", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+        ) {
+            Text("送出")
+        }
+    }
 }
+
+private fun requestSmsPermission(context: Context, onPermissionResult: (Boolean) -> Unit) {
+    if (ContextCompat.checkSelfPermission(
+            context,
+            android.Manifest.permission.SEND_SMS
+        ) == PackageManager.PERMISSION_GRANTED
+    ) {
+        onPermissionResult(true)
+    } else {
+        ActivityCompat.requestPermissions(
+            context as Activity,
+            arrayOf(android.Manifest.permission.SEND_SMS),
+            100
+        )
+    }
+}
+
+
 
 
 @Composable
