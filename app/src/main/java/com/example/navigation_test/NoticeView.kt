@@ -208,12 +208,12 @@ fun PatientChatRoom(patient: Patient) {
 
     val sendSms = { phoneNumber: String ->
         val smsManager = SmsManager.getDefault()
-        val message = "危險通知 病患 $name 目前心律呈現"
-        if (phoneNumber.isNotEmpty()) {
+        val message = "危險通知 病患:$name \n目前心律呈現 $selectedOption 請盡快就醫"
+        if (phoneNumber.isNotEmpty()) {0
             smsManager.sendTextMessage(phoneNumber, null, message, null, null)
             Toast.makeText(context, "簡訊已送出", Toast.LENGTH_SHORT).show()
         } else {
-            Toast.makeText(context, "請輸入手機號碼", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "未輸入手機號碼", Toast.LENGTH_SHORT).show()
         }
     }
     fun requestSmsPermission(context: Context, onPermissionResult: (Boolean) -> Unit) {
