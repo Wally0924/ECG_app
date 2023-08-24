@@ -1,16 +1,23 @@
 package com.example.navigation_test
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,9 +43,28 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
-
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.Text
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.draw.shadow
+import androidx.compose.material3.SmallTopAppBar
+import androidx.compose.ui.modifier.modifierLocalConsumer
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ListItem
+import androidx.compose.ui.text.input.ImeAction
+import android.telephony.SmsManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 
 class MainActivity : ComponentActivity() {
+    private lateinit var mAuth: FirebaseAuth
     private val Lgwith = registerForActivityResult(
         FirebaseAuthUIActivityResultContract()
     ) { res ->
@@ -46,7 +72,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun onSignInResult(result: FirebaseAuthUIAuthenticationResult) {
-        val response = result.idpResponse
         if (result.resultCode == RESULT_OK) {
             // Successfully signed in
             val user = FirebaseAuth.getInstance().currentUser
@@ -63,7 +88,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private lateinit var mAuth: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -142,85 +166,143 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
 fun MainView(email: String?, signOutClicked: () -> Unit) {
     val navController = rememberNavController()
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
-    Scaffold(
-        scaffoldState = scaffoldState,
-        topBar = {
-            TopAppBar(
-                title = { Text(text = "心律檢視") },
-                backgroundColor = MaterialTheme.colors.primary,
-                contentColor = MaterialTheme.colors.onPrimary,
-                navigationIcon = {
-                    IconButton(onClick = { scope.launch { scaffoldState.drawerState.open() } }) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Toggle drawer"
-                        )
-                    }
-                },
-                actions = {
-                    Row(
-                        modifier = Modifier.padding(start = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (email != null) {
-                            Text(
-                                text = email,
-                                fontSize = 20.sp,
-                                modifier = Modifier.padding(end = 20.dp)
-                            )
-                        }
-                        Button(
-                            modifier = Modifier
-                                .align(Alignment.CenterVertically)
-                                .padding(end = 50.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                backgroundColor = Color.White,
-                                contentColor = Color.Black
-                            ),
-                            onClick = { signOutClicked() }
+    Row {
+        NavRail(navController = navController) { signOutClicked() }
+        Scaffold(
+//        scaffoldState = scaffoldState,
+            topBar = {
+                TopAppBar(
+                    title = { Text(text = "") },
+                    backgroundColor = Color(0xFF8E58E9),
+//                contentColor = MaterialTheme.colors.onPrimary,
+//                navigationIcon = {
+//                    IconButton(onClick = { scope.launch { scaffoldState.drawerState.open() } }) {
+//                        Icon(
+//                            imageVector = Icons.Default.Menu,
+//                            contentDescription = "Toggle drawer"
+//                        )
+//                    }
+//                },
+                    actions = {
+                        Row(
+                            modifier = Modifier.padding(start = 20.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(text = "登出", fontSize = 15.sp)
+                            Icon(
+                                Icons.Filled.Person,
+                                contentDescription = "user",
+                                modifier = Modifier
+                                    .size(35.dp)
+                                    .padding(end = 6.dp)
+                            )
+                            if (email != null) {
+                                Text(
+                                    text = email,
+                                    fontSize = 20.sp,
+                                    modifier = Modifier.padding(end = 20.dp)
+                                )
+                            }
+                        }
+                    }
+                )
+            }
+//        drawerGesturesEnabled = scaffoldState.drawerState.isOpen,
+//        drawerContent = {
+//            DrawerHeader()
+//            DrawerBody(items = listOf(
+//                MenuItem(
+//                    id = "home/ ",
+//                    title = "首頁",
+//                    contentDescription = "Go to home screen",
+//                    icon = Icons.Default.Home
+//                ),
+//                MenuItem(
+//                    id = "settings",
+//                    title = "設定",
+//                    contentDescription = "Go to settings screen",
+//                    icon = Icons.Default.Settings
+//                ),
+//                MenuItem(
+//                    id = "help",
+//                    title = "幫助頁面",
+//                    contentDescription = "Go to help screen",
+//                    icon = Icons.Default.Notifications
+//                )
+//            ), onItemClick = {
+//                navController.navigate(it.id)
+//                scope.launch {
+//                    scaffoldState.drawerState.close()
+//                }
+//            })
+//        }
+        ) {
+            Navigation(navController = navController)
+        }
+    }
+}
+
+@Composable
+fun NavRail(navController: NavHostController, signOutClicked: () -> Unit) {
+    var selectedItem by remember { mutableStateOf(0) }
+    val items = listOf("首頁", "通知", "設定", "幫助", "登出")
+    val icons = listOf(
+        Icons.Filled.Home,
+        Icons.Filled.Notifications,
+        Icons.Filled.Settings,
+        Icons.Filled.Info,
+        Icons.Filled.ExitToApp
+    )
+    NavigationRail(
+        modifier = Modifier.shadow(
+            elevation = 15.dp,
+            clip = true
+        ),
+        header = {
+            Text(
+                text = "功能",
+                style = MaterialTheme.typography.h6,
+                modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 45.dp)
+            )
+        },
+        containerColor = Color(0xFFF5EFFF)
+    ) {
+        items.forEachIndexed { index, item ->
+            NavigationRailItem(
+                modifier = Modifier.padding(top = 5.dp, end = 5.dp),
+                icon = {
+                    Icon(
+                        icons[index],
+                        contentDescription = item,
+                        modifier = Modifier.size(25.dp)
+                    )
+                },
+                label = { Text(item, fontWeight = FontWeight.Bold, fontSize = 15.sp) },
+                selected = selectedItem == index,
+                onClick = {
+                    selectedItem = index
+                    // 根據需要進行導航
+                    when (index) {
+                        0 -> navController.navigate("home/ ")
+                        1 -> navController.navigate("notice")
+                        2 -> navController.navigate("settings")
+                        3 -> navController.navigate("help")
+                        4 -> {
+                            signOutClicked()
                         }
                     }
                 }
             )
-        },
-        drawerGesturesEnabled = scaffoldState.drawerState.isOpen,
-        drawerContent = {
-            DrawerHeader()
-            DrawerBody(items = listOf(
-                MenuItem(
-                    id = "home/ ",
-                    title = "首頁",
-                    contentDescription = "Go to home screen",
-                    icon = Icons.Default.Home
-                ),
-                MenuItem(
-                    id = "settings",
-                    title = "設定",
-                    contentDescription = "Go to settings screen",
-                    icon = Icons.Default.Settings
-                ),
-                MenuItem(
-                    id = "help",
-                    title = "幫助",
-                    contentDescription = "Go to help screen",
-                    icon = Icons.Default.Notifications
-                )
-            ), onItemClick = {
-                navController.navigate(it.id)
-                scope.launch {
-                    scaffoldState.drawerState.close()
-                }
-            })
-        }) {
-        Navigation(navController = navController)
+            if (index == items.size - 2) { // 倒數第二個項目
+                Spacer(Modifier.height(300.dp)) // 使用 Spacer 產生間隔
+            }
+        }
     }
 }
 
@@ -243,63 +325,92 @@ fun Navigation(navController: NavHostController) {
         composable("settings") {
             SettingsScreen()
         }
-        composable( "waiting"){
-            Waiting(navController)
+        composable("waiting") {
+            Waiting()
+        }
+        composable("notice") {
+            NoticeView()
         }
     }
 }
 
-//@Composable
-//fun HelpScreen() {
-//    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.lotie))
-//    var isPlaying by remember { mutableStateOf(true) }
-//
-//    val progress by animateLottieCompositionAsState(composition = composition,
-//    isPlaying = isPlaying)
-//
-//    LaunchedEffect(key1 = progress){
-//        if (progress == 0f){
-//            isPlaying = true
-//        }
-//        if (progress == 1f){
-//            isPlaying = true
-//        }
-//    }
-//
-//    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-//        LottieAnimation(modifier = Modifier.size(400.dp), composition = composition, progress = progress)
-//        Button(onClick = { isPlaying = false}){
-//            Text(text="Play Stop")
-//        }
-//    }
-//}
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun HelpScreen() {
-    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.lotie))
-    var isPlaying by remember { mutableStateOf(true) }
+    var phoneNumber by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val permissionState = rememberPermissionState(android.Manifest.permission.SEND_SMS)
 
-    val progress by animateLottieCompositionAsState(
-        composition = composition,
-        isPlaying = isPlaying,
-        iterations = LottieConstants.IterateForever
-    )
+    val sendSms = { phoneNumber: String ->
+        val smsManager = SmsManager.getDefault()
+        val message = "這是測試簡訊"
+        if (!phoneNumber.isEmpty()) {
+            smsManager.sendTextMessage(phoneNumber, null, message, null, null)
+            Toast.makeText(context, "簡訊已送出", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "請輸入手機號碼", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        LottieAnimation(
-            modifier = Modifier.size(400.dp),
-            composition = composition,
-            progress = progress
+        TextField(
+            value = phoneNumber,
+            onValueChange = { phoneNumber = it },
+            label = { Text("手機號碼") },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+            keyboardActions = KeyboardActions(
+                onSend = { sendSms(phoneNumber) }
+            ),
+            modifier = Modifier.fillMaxWidth()
         )
-        Button(onClick = { isPlaying = !isPlaying }) {
-            Text(text = if (isPlaying) "停止" else "播放")
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                if (permissionState.status.isGranted) {
+                    sendSms(phoneNumber)
+                } else {
+                    requestSmsPermission(context) { granted ->
+                        if (granted) {
+                            sendSms(phoneNumber)
+                        } else {
+                            Toast.makeText(context, "簡訊發送權限被拒絕", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+        ) {
+            Text("送出")
         }
     }
 }
+
+private fun requestSmsPermission(context: Context, onPermissionResult: (Boolean) -> Unit) {
+    if (ContextCompat.checkSelfPermission(
+            context,
+            android.Manifest.permission.SEND_SMS
+        ) == PackageManager.PERMISSION_GRANTED
+    ) {
+        onPermissionResult(true)
+    } else {
+        ActivityCompat.requestPermissions(
+            context as Activity,
+            arrayOf(android.Manifest.permission.SEND_SMS),
+            100
+        )
+    }
+}
+
+
 
 
 @Composable

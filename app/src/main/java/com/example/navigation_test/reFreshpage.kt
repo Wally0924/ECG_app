@@ -83,9 +83,6 @@ fun reFreshHomepage(navController: NavController) {
             for(usr in usrList){
                 egDtList[usr]?.let { ecgDataList.add(it) }
             }
-            for (item in ecgDataList) {
-                println("檢查答案: ${item[0]}")
-            }
             navController.navigate("home/ ")
         } catch (e: Exception) {
             Log.d(ContentValues.TAG, "Error getting documents: ", e)
@@ -94,7 +91,7 @@ fun reFreshHomepage(navController: NavController) {
 }
 
 @Composable
-fun Waiting(navController: NavHostController) {
+fun Waiting() {
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.lotie))
     var isPlaying by remember { mutableStateOf(true) }
     val progress by animateLottieCompositionAsState(
@@ -116,7 +113,7 @@ fun Waiting(navController: NavHostController) {
         Text(
             text = "資料同步中...",
             style = TextStyle(
-                fontSize = 25.sp,
+                fontSize = 26.sp,
                 color = Color.Black
             ),
             textAlign = TextAlign.Center,
