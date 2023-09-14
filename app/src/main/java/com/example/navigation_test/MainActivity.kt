@@ -5,15 +5,13 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.view.WindowManager
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -36,13 +34,7 @@ import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
 import com.google.firebase.auth.FirebaseAuth
-import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
-import com.airbnb.lottie.compose.LottieAnimation
-import com.airbnb.lottie.compose.LottieCompositionSpec
-import com.airbnb.lottie.compose.LottieConstants
-import com.airbnb.lottie.compose.animateLottieCompositionAsState
-import com.airbnb.lottie.compose.rememberLottieComposition
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
@@ -50,18 +42,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.draw.shadow
-import androidx.compose.material3.SmallTopAppBar
-import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.material3.Divider
-import androidx.compose.material3.ListItem
-import androidx.compose.ui.text.input.ImeAction
-import android.telephony.SmsManager
-import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 
 class MainActivity : ComponentActivity() {
     private lateinit var mAuth: FirebaseAuth
@@ -335,64 +323,76 @@ fun Navigation(navController: NavHostController) {
 }
 
 
-@OptIn(ExperimentalPermissionsApi::class)
+
 @Composable
 fun HelpScreen() {
-    var phoneNumber by remember { mutableStateOf("") }
-    val context = LocalContext.current
-    val permissionState = rememberPermissionState(android.Manifest.permission.SEND_SMS)
+    ChartView(
+        // 隨機生成大小100的ByteArray
+        rawData = ByteArray(500) { (0..255).random().toByte() }
+    )
+}
 
-    val sendSms = { phoneNumber: String ->
-        val smsManager = SmsManager.getDefault()
-        val message = "這是測試簡訊"
-        if (!phoneNumber.isEmpty()) {
-            smsManager.sendTextMessage(phoneNumber, null, message, null, null)
-            Toast.makeText(context, "簡訊已送出", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(context, "請輸入手機號碼", Toast.LENGTH_SHORT).show()
-        }
-    }
+@Composable
+fun ChartView(
+    rawData: ByteArray
+) {
+    val proportion = 1.0f
+    val speed = 5f
+    var lastX = 0f
+    var lastY = 0f
+    var nextX: Float
+    var nextY: Float
 
-    Column(
+    Canvas(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(Color.Black)
     ) {
-        TextField(
-            value = phoneNumber,
-            onValueChange = { phoneNumber = it },
-            label = { Text("手機號碼") },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-            keyboardActions = KeyboardActions(
-                onSend = { sendSms(phoneNumber) }
-            ),
-            modifier = Modifier.fillMaxWidth()
-        )
+        val canvasWidth = size.width
+        val canvasHeight = size.height
+        Log.d("ChartViewCompose", "canvasWidth: $canvasWidth , canvasHeight: $canvasHeight")
+        val paint = Color.Green
+        val mMax = canvasWidth.toInt()
 
-        Spacer(modifier = Modifier.height(16.dp))
 
-        Button(
-            onClick = {
-                if (permissionState.status.isGranted) {
-                    sendSms(phoneNumber)
-                } else {
-                    requestSmsPermission(context) { granted ->
-                        if (granted) {
-                            sendSms(phoneNumber)
-                        } else {
-                            Toast.makeText(context, "簡訊發送權限被拒絕", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
+        // 繪製遮罩
+        var maskEnd = ((lastX + (rawData.size * speed))).toInt()
+        val maskStart = lastX.toInt()
+        if (maskEnd < mMax) {
+            drawRect(
+                color = Color.Black,
+                topLeft = Offset(maskStart.toFloat(), 0f),
+                size = Size(maskEnd.toFloat(), canvasHeight)
+            )
+        } else {
+            drawRect(
+                color = Color.Black,
+                topLeft = Offset(maskStart.toFloat(), 0f),
+                size = Size(mMax.toFloat(), canvasHeight)
+            )
+            maskEnd -= mMax
+            drawRect(
+                color = Color.Black,
+                topLeft = Offset(0f, 0f),
+                size = Size(maskEnd.toFloat(), canvasHeight)
+            )
+        }
+        drawLine(paint, Offset(maskEnd + 1f, 0f), Offset(maskEnd + 1f, canvasHeight))
+
+        // 繪製數據
+        for (rawDatum in rawData) {
+            nextX = lastX + speed
+            if (nextX >= mMax) {
+                nextX -= mMax
             }
-        ) {
-            Text("送出")
+            nextY = canvasHeight - ((rawDatum.toInt() and 0xFF) * proportion)
+            drawLine(paint, Offset(lastX, lastY), Offset(nextX, nextY))
+            lastX = nextX
+            lastY = nextY
         }
     }
 }
+
 
 private fun requestSmsPermission(context: Context, onPermissionResult: (Boolean) -> Unit) {
     if (ContextCompat.checkSelfPermission(
@@ -409,8 +409,6 @@ private fun requestSmsPermission(context: Context, onPermissionResult: (Boolean)
         )
     }
 }
-
-
 
 
 @Composable
