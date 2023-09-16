@@ -187,9 +187,8 @@ fun HomeView(name: String?, navController: NavController) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             combinedData.value[item]?.let {
-                                ChartViewCompose(
-                                    it.toFloatArray()
-                                )
+                                val chartViewModel = ChartViewModel()
+                                ChartView(chartViewModel)
                             }
                         }
                     }

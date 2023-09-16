@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -15,16 +16,28 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.set
 import androidx.navigation.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -34,22 +47,7 @@ import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
 import com.google.firebase.auth.FirebaseAuth
-import androidx.compose.runtime.getValue
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
-import androidx.compose.material3.Text
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.draw.shadow
-import androidx.compose.material3.Divider
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
     private lateinit var mAuth: FirebaseAuth
@@ -322,75 +320,15 @@ fun Navigation(navController: NavHostController) {
     }
 }
 
-
+private val chartViewModel = ChartViewModel()
 
 @Composable
 fun HelpScreen() {
+    Log.d("HelpScreen", "HelpScreen重新繪製")
     ChartView(
-        // 隨機生成大小100的ByteArray
-        rawData = ByteArray(500) { (0..255).random().toByte() }
+        // 將 data 傳遞給 ChartView，當 data 變化時，Compose 會自動重新繪製
+        viewModel = chartViewModel
     )
-}
-
-@Composable
-fun ChartView(
-    rawData: ByteArray
-) {
-    val proportion = 1.0f
-    val speed = 5f
-    var lastX = 0f
-    var lastY = 0f
-    var nextX: Float
-    var nextY: Float
-
-    Canvas(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
-        val canvasWidth = size.width
-        val canvasHeight = size.height
-        Log.d("ChartViewCompose", "canvasWidth: $canvasWidth , canvasHeight: $canvasHeight")
-        val paint = Color.Green
-        val mMax = canvasWidth.toInt()
-
-
-        // 繪製遮罩
-        var maskEnd = ((lastX + (rawData.size * speed))).toInt()
-        val maskStart = lastX.toInt()
-        if (maskEnd < mMax) {
-            drawRect(
-                color = Color.Black,
-                topLeft = Offset(maskStart.toFloat(), 0f),
-                size = Size(maskEnd.toFloat(), canvasHeight)
-            )
-        } else {
-            drawRect(
-                color = Color.Black,
-                topLeft = Offset(maskStart.toFloat(), 0f),
-                size = Size(mMax.toFloat(), canvasHeight)
-            )
-            maskEnd -= mMax
-            drawRect(
-                color = Color.Black,
-                topLeft = Offset(0f, 0f),
-                size = Size(maskEnd.toFloat(), canvasHeight)
-            )
-        }
-        drawLine(paint, Offset(maskEnd + 1f, 0f), Offset(maskEnd + 1f, canvasHeight))
-
-        // 繪製數據
-        for (rawDatum in rawData) {
-            nextX = lastX + speed
-            if (nextX >= mMax) {
-                nextX -= mMax
-            }
-            nextY = canvasHeight - ((rawDatum.toInt() and 0xFF) * proportion)
-            drawLine(paint, Offset(lastX, lastY), Offset(nextX, nextY))
-            lastX = nextX
-            lastY = nextY
-        }
-    }
 }
 
 
@@ -413,6 +351,7 @@ private fun requestSmsPermission(context: Context, onPermissionResult: (Boolean)
 
 @Composable
 fun SettingsScreen() {
+    Log.d("SettingScreen", "SettingScreen重新繪製")
     val notification_set = remember { mutableStateOf("On") }
     val darkmode_set = remember { mutableStateOf("Off") }
     val language_set = remember { mutableStateOf("English") }
