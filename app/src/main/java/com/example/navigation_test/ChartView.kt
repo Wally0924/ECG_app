@@ -6,10 +6,7 @@ import android.graphics.drawable.shapes.RectShape
 import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -20,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
 
@@ -28,17 +24,15 @@ import kotlinx.coroutines.delay
 fun ChartView(
     viewModel: ChartViewModel
 ) {
-    Log.d("ChartView", "ChartView重繪")
     var data by remember { mutableStateOf(generateRandomData()) }
     LaunchedEffect(true) {
         while (true) {
             data = generateRandomData()
-            delay(100)
+            delay(1000)
         }
     }
     val mBitmap =
-        Bitmap.createBitmap(3000, 2500, Bitmap.Config.ARGB_8888)
-    val mCanvas = android.graphics.Canvas(mBitmap)
+        Bitmap.createBitmap(873, 442, Bitmap.Config.ARGB_8888)
     val Mask = ShapeDrawable(RectShape())
     val proportion = 1.8f
     val speed = 20f
@@ -48,6 +42,7 @@ fun ChartView(
             .fillMaxSize()
             .background(Color.Black)
     ) {
+        val mCanvas = android.graphics.Canvas(mBitmap)
         val paint = android.graphics.Paint()
         paint.color = Color.Green.toArgb()
         var nextX = 0f
@@ -90,6 +85,10 @@ fun ChartView(
             viewModel.updateLastXY(nextX, nextY)
         }
         drawImage(mBitmap.asImageBitmap())
+        Log.d(
+            "ChartView",
+            "maskStart: $maskStart , \nmaskEnd: $maskEnd , \nnextX: $nextX , \nnextY: $nextY"
+        )
     }
 }
 
