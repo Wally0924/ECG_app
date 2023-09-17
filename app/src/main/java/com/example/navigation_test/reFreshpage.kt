@@ -46,7 +46,7 @@ fun reFreshHomepage(navController: NavController) {
                 val name = document.data["userName"]
                 val userID = document.id
                 mbbList.add(name.toString())
-                usrList.add(userID.toString())
+                usrList.add(userID)
             }
 
             val fetchTasks = mutableListOf<Deferred<Unit>>()
@@ -54,12 +54,13 @@ fun reFreshHomepage(navController: NavController) {
                 print(usrId)
                 val fetchTask = async(Dispatchers.IO) {
                     val egDtFloat = mutableListOf<Float>()
-                    val ecgDataResult = withContext(Dispatchers.IO) { query.document(usrId).collection("Ecg_Data").get().await() }
+                    val ecgDataResult = withContext(Dispatchers.IO) { query.document(usrId).collection("Heartbeat_15s").get().await() }
+//                    val ecgDataResult = withContext(Dispatchers.IO) { query.document(usrId).collection("Ecg_Data").get().await() }
                     for (ecgData in ecgDataResult) {
-                        val list = ecgData.data["ecgData"] as? List<Double>
+                        val list = ecgData.data["heartbeat"] as? List<Double>
                         if (list != null) {
                             egDtFloat.clear()
-                            for (i in 1..10) {
+                            for (i in 1..1) {
                                 egDtFloat.addAll(list.map { it.toFloat() })
                             }
                         } else {
@@ -68,7 +69,7 @@ fun reFreshHomepage(navController: NavController) {
                         }
                     }
                     egDtList[usrId] = egDtFloat.toList()
-                    println(egDtList[usrId])
+                    println(egDtList[usrId]?.size ?: 0)
                 }
                 fetchTasks.add(fetchTask)
             }

@@ -1,5 +1,6 @@
 package com.example.navigation_test
 
+import android.util.Log
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.LocalPinnableContainer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -51,12 +53,11 @@ var ecgDataList = mutableListOf<List<Float>>()
 
 @Composable
 fun HomeView(name: String?, navController: NavController) {
-    println("提早執行")
     val data = remember { mutableStateOf(mblist) }
-    val ecgList = remember { mutableStateOf(ecgDataList) }
-    val combinedData = remember {
-        mutableStateOf(data.value.zip(ecgList.value).toMap())
-    }
+//    val ecgList = remember { mutableStateOf(ecgDataList) }
+//    val combinedData = remember {
+//        mutableStateOf(data.value.zip(ecgList.value).toMap())
+//    }
     val state = rememberReorderableLazyListState(onMove = { from, to ->
         data.value = data.value.toMutableList().apply {
             add(to.index, removeAt(from.index))
@@ -67,7 +68,7 @@ fun HomeView(name: String?, navController: NavController) {
             modifier = Modifier
                 .fillMaxHeight()
                 .width(250.dp)
-                .padding(start = 15.dp , end = 5.dp),
+                .padding(start = 15.dp, end = 5.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -111,7 +112,10 @@ fun HomeView(name: String?, navController: NavController) {
                 ) {
                     items(data.value, { it }) { item ->
                         ReorderableItem(state, key = item) { isDragging ->
-                            val elevation = animateDpAsState(if (isDragging) 16.dp else 0.dp)
+                            val elevation = animateDpAsState(
+                                if (isDragging) 16.dp else 0.dp,
+                                label = ""
+                            )
                             Column(
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -146,55 +150,54 @@ fun HomeView(name: String?, navController: NavController) {
                 AlertDialogSample(navController)
             }
         }
+        ChartList(data = data.value)
+    }
+}
 
-        LazyVerticalGrid(columns = GridCells.Adaptive(450.dp)) {
-            items(data.value) { item ->
-                Box(
+@Composable
+fun ChartList(data: MutableList<String>) {
+//    LocalPinnableContainer.current?.pin()
+    LazyVerticalGrid(columns = GridCells.Adaptive(450.dp)) {
+        items(data) { item ->
+            Box(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .aspectRatio(1.5f)
+                    .clip(RoundedCornerShape(10.dp))
+                    .border(
+                        width = 2.dp, color = Color.Blue, shape = RoundedCornerShape(10.dp)
+                    ), contentAlignment = Alignment.Center
+            ) {
+                Column(
                     modifier = Modifier
-                        .padding(8.dp)
-                        .aspectRatio(1.5f)
-                        .clip(RoundedCornerShape(10.dp))
-                        .border(
-                            width = 2.dp, color = Color.Blue, shape = RoundedCornerShape(10.dp)
-                        ), contentAlignment = Alignment.Center
+                        .padding(10.dp)
+                        .fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(
+                    Row(
                         modifier = Modifier
-                            .padding(10.dp)
-                            .fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                            .fillMaxWidth()
+                            .padding(5.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(5.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(text = item, fontSize = 40.sp)
-                            Text(text = "State", fontSize = 25.sp)
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            combinedData.value[item]?.let {
-                                EcgPlot(
-                                    ecgData = it,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .aspectRatio(2f)
-                                        .background(Color.Black)
-                                )
-                            }
-                        }
+                        Text(text = item, fontSize = 40.sp)
+                        Text(text = "State", fontSize = 25.sp)
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val chartViewModel = ChartViewModel()
+                        ChartView(chartViewModel)
                     }
                 }
             }
         }
     }
 }
+
 
 
 
