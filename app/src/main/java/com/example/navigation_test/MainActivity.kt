@@ -152,30 +152,19 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
 fun MainView(email: String?, signOutClicked: () -> Unit) {
     val navController = rememberNavController()
     val scaffoldState = rememberScaffoldState()
-    val scope = rememberCoroutineScope()
     Row {
         NavRail(navController = navController) { signOutClicked() }
         Scaffold(
-//        scaffoldState = scaffoldState,
+            scaffoldState = scaffoldState,
             topBar = {
                 TopAppBar(
                     title = { Text(text = "") },
                     backgroundColor = Color(0xFF8E58E9),
-//                contentColor = MaterialTheme.colors.onPrimary,
-//                navigationIcon = {
-//                    IconButton(onClick = { scope.launch { scaffoldState.drawerState.open() } }) {
-//                        Icon(
-//                            imageVector = Icons.Default.Menu,
-//                            contentDescription = "Toggle drawer"
-//                        )
-//                    }
-//                },
                     actions = {
                         Row(
                             modifier = Modifier.padding(start = 20.dp),
@@ -199,35 +188,6 @@ fun MainView(email: String?, signOutClicked: () -> Unit) {
                     }
                 )
             }
-//        drawerGesturesEnabled = scaffoldState.drawerState.isOpen,
-//        drawerContent = {
-//            DrawerHeader()
-//            DrawerBody(items = listOf(
-//                MenuItem(
-//                    id = "home/ ",
-//                    title = "首頁",
-//                    contentDescription = "Go to home screen",
-//                    icon = Icons.Default.Home
-//                ),
-//                MenuItem(
-//                    id = "settings",
-//                    title = "設定",
-//                    contentDescription = "Go to settings screen",
-//                    icon = Icons.Default.Settings
-//                ),
-//                MenuItem(
-//                    id = "help",
-//                    title = "幫助頁面",
-//                    contentDescription = "Go to help screen",
-//                    icon = Icons.Default.Notifications
-//                )
-//            ), onItemClick = {
-//                navController.navigate(it.id)
-//                scope.launch {
-//                    scaffoldState.drawerState.close()
-//                }
-//            })
-//        }
         ) {
             Navigation(navController = navController)
         }
@@ -275,7 +235,7 @@ fun NavRail(navController: NavHostController, signOutClicked: () -> Unit) {
                     selectedItem = index
                     // 根據需要進行導航
                     when (index) {
-                        0 -> navController.navigate("home/ ")
+                        0 -> navController.navigate("home")
                         1 -> navController.navigate("notice")
                         2 -> navController.navigate("settings")
                         3 -> navController.navigate("help")
@@ -295,12 +255,10 @@ fun NavRail(navController: NavHostController, signOutClicked: () -> Unit) {
 
 @Composable
 fun Navigation(navController: NavHostController) {
-    NavHost(navController = navController, startDestination = "home" + "/{name}") {
-        composable("home" + "/{name}", arguments = listOf(navArgument("name") {
-            type = NavType.StringType
-            nullable = true
-        })) { entry ->
-            HomeView(name = entry.arguments?.getString("name"), navController)
+    NavHost(navController = navController, startDestination = "home") {
+        composable("home") {
+            Log.d("ChartView", "Home這裡檢查有沒有被重繪")
+            HomeView(navController)
         }
         composable("addMember") {
             AlertDialogSample(navController)
@@ -312,6 +270,7 @@ fun Navigation(navController: NavHostController) {
             SettingsScreen()
         }
         composable("waiting") {
+            Log.d("ChartView", "Waiting這裡檢查有沒有被重繪")
             Waiting()
         }
         composable("notice") {
@@ -320,15 +279,14 @@ fun Navigation(navController: NavHostController) {
     }
 }
 
-private val chartViewModel = ChartViewModel()
 
 @Composable
 fun HelpScreen() {
     Log.d("HelpScreen", "HelpScreen重新繪製")
-    ChartView(
-        // 將 data 傳遞給 ChartView，當 data 變化時，Compose 會自動重新繪製
-        viewModel = chartViewModel
-    )
+//    ChartView(
+//        // 將 data 傳遞給 ChartView，當 data 變化時，Compose 會自動重新繪製
+//        viewModel = chartViewModel
+//    )
 }
 
 

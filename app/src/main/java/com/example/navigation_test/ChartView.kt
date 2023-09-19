@@ -22,44 +22,44 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun ChartView(
-    viewModel: ChartViewModel
+    viewModel: ChartViewModel,
+    userId: String
 ) {
     var data by remember { mutableStateOf(generateRandomData()) }
-    LaunchedEffect(true) {
+    LaunchedEffect(Unit) {
         while (true) {
             data = generateRandomData()
-            delay(1000)
+            delay(200)
         }
     }
-    val mBitmap =
-        Bitmap.createBitmap(873, 442, Bitmap.Config.ARGB_8888)
-    val Mask = ShapeDrawable(RectShape())
-    val proportion = 1.8f
-    val speed = 20f
+    val mask = ShapeDrawable(RectShape())
+    val proportion = 1f
+    val speed = 10f
 
     Canvas(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        val mCanvas = android.graphics.Canvas(mBitmap)
+        val mCanvas = android.graphics.Canvas(viewModel.getBitmap(userId))
         val paint = android.graphics.Paint()
+        paint.strokeWidth = 2f
         paint.color = Color.Green.toArgb()
         var nextX = 0f
         var nextY = 0f
         val canvasWidth = size.width
         val canvasHeight = size.height
-        val maskStart = viewModel.getmLastX()
-        var maskEnd = (viewModel.getmLastX() + (data.size * speed))
+        val maskStart = viewModel.getListData(userId).first
+        var maskEnd = (viewModel.getListData(userId).first + (data.size * speed))
         if (maskEnd < canvasWidth) {
-            Mask.setBounds(maskStart.toInt(), 0, maskEnd.toInt(), canvasHeight.toInt())
-            Mask.draw(mCanvas)
+            mask.setBounds(maskStart.toInt(), 0, maskEnd.toInt(), canvasHeight.toInt())
+            mask.draw(mCanvas)
         } else {
-            Mask.setBounds(maskStart.toInt(), 0, canvasWidth.toInt(), canvasHeight.toInt())
-            Mask.draw(mCanvas)
+            mask.setBounds(maskStart.toInt(), 0, canvasWidth.toInt(), canvasHeight.toInt())
+            mask.draw(mCanvas)
             maskEnd -= canvasWidth
-            Mask.setBounds(0, 0, maskEnd.toInt(), canvasHeight.toInt())
-            Mask.draw(mCanvas)
+            mask.setBounds(0, 0, maskEnd.toInt(), canvasHeight.toInt())
+            mask.draw(mCanvas)
         }
         mCanvas.drawLine(
             maskEnd + 1f,
@@ -69,31 +69,27 @@ fun ChartView(
             paint
         )
         for (rawDatum in data) {
-            nextX = viewModel.getmLastX() + speed
+            nextX = viewModel.getListData(userId).first + speed
             if (nextX >= canvasWidth) {
                 nextX -= canvasWidth
             } else {
                 nextY = canvasHeight - ((rawDatum.toInt() and 0xFF) * proportion)
                 mCanvas.drawLine(
-                    viewModel.getmLastX(),
-                    viewModel.getmLastY(),
+                    viewModel.getListData(userId).first,
+                    viewModel.getListData(userId).second,
                     nextX,
                     nextY,
                     paint
                 )
             }
-            viewModel.updateLastXY(nextX, nextY)
+            viewModel.updateData(userId, Pair(nextX, nextY))
         }
-        drawImage(mBitmap.asImageBitmap())
-        Log.d(
-            "ChartView",
-            "maskStart: $maskStart , \nmaskEnd: $maskEnd , \nnextX: $nextX , \nnextY: $nextY"
-        )
+        drawImage(viewModel.getBitmap(userId).asImageBitmap())
     }
 }
 
 private fun generateRandomData(): ByteArray {
-    return ByteArray(3) {
+    return ByteArray(5) {
         (50..200).random().toByte() // 隨機生成測試數據
     }
 }

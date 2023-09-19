@@ -1,24 +1,39 @@
 package com.example.navigation_test
 
 import android.graphics.Bitmap
-import android.graphics.Canvas
+import android.util.Log
 import androidx.lifecycle.ViewModel
 
 class ChartViewModel : ViewModel() {
-    private var mlastX: Float = 0f
+    private var _mbListData = mutableMapOf<String, Pair<Float, Float>>()
 
-    private var mlastY: Float = 0f
+    private var _mBitmap = mutableMapOf<String, Bitmap>()
 
-    fun updateLastXY(x: Float, y: Float) {
-        mlastX = x
-        mlastY = y
+    init {
+        _mbListData = mutableMapOf()
+        _mBitmap = mutableMapOf()
     }
 
-    fun getmLastX(): Float {
-        return mlastX
+    fun updateData(key: String, value: Pair<Float, Float>) {
+        val currentMap = _mbListData.toMutableMap()
+        currentMap[key] = value
+        _mbListData = currentMap
     }
 
-    fun getmLastY(): Float {
-        return mlastY
+    fun initKey(listOfKey: List<String>) {
+        _mbListData.clear()
+        for (key in listOfKey) {
+            _mbListData[key] = Pair(0f, 0f)
+            _mBitmap[key] = Bitmap.createBitmap(873, 442, Bitmap.Config.ARGB_8888)
+        }
     }
+
+    fun getListData(key: String): Pair<Float, Float> {
+        return _mbListData[key] ?: Pair(0f, 0f)
+    }
+
+    fun getBitmap(key: String): Bitmap {
+        return _mBitmap[key] ?: Bitmap.createBitmap(873, 442, Bitmap.Config.ARGB_8888)
+    }
+
 }
