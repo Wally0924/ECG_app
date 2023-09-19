@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.google.firebase.firestore.FirebaseFirestore
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorderAfterLongPress
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
@@ -47,13 +48,14 @@ import org.burnoutcrew.reorderable.reorderable
 
 
 //首頁
-var mblist = mutableListOf<String>()
 var userId = mutableListOf<String>()
-var ecgDataList = mutableListOf<List<Float>>()
+private val chartViewModel = ChartViewModel()
+private val mbViewModel = MemberViewModel()
 
 @Composable
-fun HomeView(name: String?, navController: NavController) {
-    val data = remember { mutableStateOf(mblist) }
+fun HomeView(navController: NavController) {
+    val data = remember { mutableStateOf(userId) }
+    val isLoading = remember { mutableStateOf(false) }
 //    val ecgList = remember { mutableStateOf(ecgDataList) }
 //    val combinedData = remember {
 //        mutableStateOf(data.value.zip(ecgList.value).toMap())
@@ -63,100 +65,107 @@ fun HomeView(name: String?, navController: NavController) {
             add(to.index, removeAt(from.index))
         }
     })
-    Row(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxHeight()
-                .width(250.dp)
-                .padding(start = 15.dp, end = 5.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Card(
-                shape = RoundedCornerShape(16.dp),
+    if (isLoading.value) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Waiting()
+        }
+    } else {
+        chartViewModel.initKey(userId)
+        Row(modifier = Modifier.fillMaxSize()) {
+            Column(
                 modifier = Modifier
-                    .padding(10.dp)
-                    .width(200.dp)
-                    .weight(1f),
-                elevation = 10.dp
+                    .fillMaxHeight()
+                    .width(250.dp)
+                    .padding(start = 15.dp, end = 5.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                Column(
+                Card(
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
-                        .fillMaxSize()
-                        .clickable {
-                            reFreshHomepage(navController)
-                            navController.navigate("waiting")
-                            println("按了重新整理")
-                        },
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .padding(10.dp)
+                        .width(200.dp)
+                        .weight(1f),
+                    elevation = 10.dp
                 ) {
-                    Text(text = "同步人員名單", textAlign = TextAlign.Center, fontSize = 20.sp)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable {
+                                isLoading.value = true
+                                reFreshHomepage(mbViewModel) {
+                                    isLoading.value = false
+                                }
+                            },
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(text = "同步人員名單", textAlign = TextAlign.Center, fontSize = 20.sp)
+                    }
                 }
-            }
-            Card(
-                modifier = Modifier
-                    .padding(10.dp)
-                    .fillMaxWidth()
-                    .border(2.dp, Color.Blue)
-                    .weight(8f),
+                Card(
+                    modifier = Modifier
+                        .padding(10.dp)
+                        .fillMaxWidth()
+                        .border(2.dp, Color.Blue)
+                        .weight(8f),
 //                shape = RoundedCornerShape(topStart = 16.dp, bottomEnd = 16.dp),
 //                backgroundColor = Color.Gray,
-                elevation = 10.dp,
-            ) {
-                LazyColumn(
-                    state = state.listState,
-                    modifier = Modifier
-                        .reorderable(state)
-                        .detectReorderAfterLongPress(state),
+                    elevation = 10.dp,
                 ) {
-                    items(data.value, { it }) { item ->
-                        ReorderableItem(state, key = item) { isDragging ->
-                            val elevation = animateDpAsState(
-                                if (isDragging) 16.dp else 0.dp,
-                                label = ""
-                            )
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .shadow(elevation.value)
-                                    .background(MaterialTheme.colors.surface),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxSize(),
-                                    horizontalArrangement = Arrangement.SpaceEvenly,
-                                    verticalAlignment = Alignment.CenterVertically
+                    LazyColumn(
+                        state = state.listState,
+                        modifier = Modifier
+                            .reorderable(state)
+                            .detectReorderAfterLongPress(state),
+                    ) {
+                        items(data.value, { it }) { item ->
+                            ReorderableItem(state, key = item) { isDragging ->
+                                val elevation = animateDpAsState(
+                                    if (isDragging) 16.dp else 0.dp,
+                                    label = ""
+                                )
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .shadow(elevation.value)
+                                        .background(MaterialTheme.colors.surface),
+                                    horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    Text(
-                                        text = item,
-                                        modifier = Modifier
-                                            .width(150.dp)
-                                            .padding(10.dp),
-                                        fontSize = 32.sp
-                                    )
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.round_dehaze_24),
-                                        contentDescription = null
-                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxSize(),
+                                        horizontalArrangement = Arrangement.SpaceEvenly,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = mbViewModel.getListData(item),
+                                            modifier = Modifier
+                                                .width(150.dp)
+                                                .padding(10.dp),
+                                            fontSize = 32.sp
+                                        )
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.round_dehaze_24),
+                                            contentDescription = null
+                                        )
+                                    }
+                                    Divider(thickness = 2.dp)
                                 }
-                                Divider(thickness = 2.dp)
                             }
                         }
                     }
                 }
+                Row(modifier = Modifier.weight(1f)) {
+                    AlertDialogSample(navController)
+                }
             }
-            Row(modifier = Modifier.weight(1f)) {
-                AlertDialogSample(navController)
-            }
+            ChartList(data = data.value, chartViewModel = chartViewModel)
         }
-        ChartList(data = data.value)
     }
 }
 
 @Composable
-fun ChartList(data: MutableList<String>) {
-//    LocalPinnableContainer.current?.pin()
+fun ChartList(data: MutableList<String>, chartViewModel: ChartViewModel) {
     LazyVerticalGrid(columns = GridCells.Adaptive(450.dp)) {
         items(data) { item ->
             Box(
@@ -181,7 +190,7 @@ fun ChartList(data: MutableList<String>) {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(text = item, fontSize = 40.sp)
+                        Text(text = mbViewModel.getListData(item), fontSize = 40.sp)
                         Text(text = "State", fontSize = 25.sp)
                     }
                     Row(
@@ -189,15 +198,13 @@ fun ChartList(data: MutableList<String>) {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        val chartViewModel = ChartViewModel()
-                        ChartView(chartViewModel)
+                        ChartView(chartViewModel, item)
                     }
                 }
             }
         }
     }
 }
-
 
 
 
