@@ -52,7 +52,6 @@ fun reFreshHomepage(
                 val userID = document.id
                 mbViewModel.updateData(userID, name.toString())
                 usrList.add(userID)
-                Log.d("mbViewModel", mbViewModel.getListData(userID))
             }
 //
 //            val fetchTasks = mutableListOf<Deferred<Unit>>()

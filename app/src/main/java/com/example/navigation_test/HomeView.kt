@@ -51,6 +51,7 @@ import org.burnoutcrew.reorderable.reorderable
 var userId = mutableListOf<String>()
 private val chartViewModel = ChartViewModel()
 private val mbViewModel = MemberViewModel()
+val dbViewModel = DataBaseViewModel()
 
 @Composable
 fun HomeView(navController: NavController) {
@@ -96,6 +97,7 @@ fun HomeView(navController: NavController) {
                                 reFreshHomepage(mbViewModel) {
                                     isLoading.value = false
                                 }
+                                dbViewModel.listenData()
                             },
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally,
