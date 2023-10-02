@@ -2,14 +2,12 @@ package com.example.navigation_test
 
 import android.graphics.drawable.ShapeDrawable
 import android.graphics.drawable.shapes.RectShape
-import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -19,17 +17,16 @@ import androidx.compose.ui.graphics.toArgb
 @Composable
 fun ChartView(
     viewModel: ChartViewModel,
-    dbViewModel: DataBaseViewModel = DataBaseViewModel(mHandler),
     userId: String
 ) {
-
+    val dbViewModel = DataBaseViewModel(userId)
     val data by dbViewModel.dataArray.observeAsState(initial = ByteArray(10))
     Canvas(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        val proportion = 1.8f
+        val proportion = 0.9f
         val speed = 1f
         val mask = ShapeDrawable(RectShape())
         val mCanvas = android.graphics.Canvas(viewModel.getBitmap(userId))
@@ -65,7 +62,7 @@ fun ChartView(
             if (nextX >= canvasWidth) {
                 nextX -= canvasWidth
             } else {
-                nextY = canvasHeight - (((rawDatum.toInt() and 0xFF) - 40) * proportion)
+                nextY = canvasHeight - ((rawDatum.toInt() and 0xFF) * proportion)
                 mCanvas.drawLine(
                     viewModel.getListData(userId).first,
                     viewModel.getListData(userId).second,
@@ -80,8 +77,8 @@ fun ChartView(
     }
 }
 
-private fun generateRandomData(): ByteArray {
-    return ByteArray(5) {
-        (50..200).random().toByte() // 隨機生成測試數據
-    }
-}
+//private fun generateRandomData(): ByteArray {
+//    return ByteArray(5) {
+//        (50..200).random().toByte() // 隨機生成測試數據
+//    }
+//}

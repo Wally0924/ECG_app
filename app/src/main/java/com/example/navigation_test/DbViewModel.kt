@@ -12,25 +12,22 @@ import com.google.firebase.firestore.Query
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
-import java.lang.String
 import java.util.LinkedList
 import java.util.Queue
 import kotlin.Byte
 import kotlin.ByteArray
 import kotlin.Exception
-import kotlin.Int
 
 @SuppressLint("HandlerLeak")
-class DataBaseViewModel(handler: Handler) : ViewModel() {
+class DataBaseViewModel(userId: String) : ViewModel() {
+    private val mHandler: Handler = Handler()
     private val r: Runnable = object : Runnable {
         override fun run() {
             if (job.isNotEmpty()) {
                 job.poll()?.let { updateData(it) }
 
             }
-            handler.postDelayed(this, 40)
+            mHandler.postDelayed(this, 40)
         }
     }
 
@@ -40,8 +37,12 @@ class DataBaseViewModel(handler: Handler) : ViewModel() {
     }
 
     init {
-        handler.postDelayed(r, 1)
+        mHandler.postDelayed(r, 1)
+        listenData()
     }
+
+    private val _state = MutableLiveData("")
+    val state: LiveData<String> = _state
 
     private val _uiState = MutableLiveData(mutableListOf<ByteArray>())
     val uiState: LiveData<MutableList<ByteArray>> = _uiState
@@ -52,9 +53,9 @@ class DataBaseViewModel(handler: Handler) : ViewModel() {
     private val job: Queue<ByteArray> = LinkedList()
 
 
-    val firebaseDb = FirebaseFirestore.getInstance()
+    private val firebaseDb = FirebaseFirestore.getInstance()
     private val query =
-        firebaseDb.collection("USER").document("7pB7dTaNOshzm0OoQCtk").collection("Heartbeat_15s")
+        firebaseDb.collection("USER").document(userId).collection("Heartbeat_15s")
             .orderBy("timestamp", Query.Direction.DESCENDING).limit(1)
 
 
@@ -63,7 +64,7 @@ class DataBaseViewModel(handler: Handler) : ViewModel() {
     }
 
     // 監聽數據並調用 updateUiState 來更新 _uiState
-    fun listenData() {
+    private fun listenData() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 query.addSnapshotListener { value, e ->
@@ -78,7 +79,7 @@ class DataBaseViewModel(handler: Handler) : ViewModel() {
                             val btlist = document.data["heartbeat"] as List<Byte>
                             val data = splitDataArray(btlist)
                             dataList.addAll(data) // 將數據添加到列表中
-                            Log.d("runnable", "Current data: ${dataList.size}")
+                            updateState(document.data["state"].toString())
                         }
                     }
                     // 在處理完所有數據後，一次性將它們添加到隊列
@@ -119,5 +120,8 @@ class DataBaseViewModel(handler: Handler) : ViewModel() {
         _dataArray.postValue(data)
     }
 
+    fun updateState(state: String) {
+        _state.postValue(state)
+    }
 }
 

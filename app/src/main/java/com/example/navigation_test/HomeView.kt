@@ -44,13 +44,11 @@ import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
 
 
-val mHandler: android.os.Handler = android.os.Handler()
 
 //首頁
 var userId = mutableListOf<String>()
 private val chartViewModel = ChartViewModel()
 private val mbViewModel = MemberViewModel()
-val dbViewModel = DataBaseViewModel(mHandler)
 
 @Composable
 fun HomeView(navController: NavController) {
@@ -96,7 +94,7 @@ fun HomeView(navController: NavController) {
                                 reFreshHomepage(mbViewModel) {
                                     isLoading.value = false
                                 }
-                                dbViewModel.listenData()
+
                             },
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -199,7 +197,7 @@ fun ChartList(data: MutableList<String>, chartViewModel: ChartViewModel) {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        ChartView(chartViewModel, dbViewModel, item)
+                        ChartView(chartViewModel, item)
                     }
                 }
             }
