@@ -44,9 +44,6 @@ class DataBaseViewModel(userId: String) : ViewModel() {
     private val _state = MutableLiveData("")
     val state: LiveData<String> = _state
 
-    private val _uiState = MutableLiveData(mutableListOf<ByteArray>())
-    val uiState: LiveData<MutableList<ByteArray>> = _uiState
-
     private val _dataArray = MutableLiveData(ByteArray(10))
     val dataArray: LiveData<ByteArray> = _dataArray
 
@@ -58,10 +55,6 @@ class DataBaseViewModel(userId: String) : ViewModel() {
         firebaseDb.collection("USER").document(userId).collection("Heartbeat_15s")
             .orderBy("timestamp", Query.Direction.DESCENDING).limit(1)
 
-
-    private fun updateUiState(newData: MutableList<ByteArray>) {
-        _uiState.value = newData
-    }
 
     // 監聽數據並調用 updateUiState 來更新 _uiState
     private fun listenData() {
@@ -79,7 +72,9 @@ class DataBaseViewModel(userId: String) : ViewModel() {
                             val btlist = document.data["heartbeat"] as List<Byte>
                             val data = splitDataArray(btlist)
                             dataList.addAll(data) // 將數據添加到列表中
-                            updateState(document.data["state"].toString())
+                            val state = document.data["state"] as String
+                            updateState(state)
+                            Log.d("chartcheck", document.id)
                         }
                     }
                     // 在處理完所有數據後，一次性將它們添加到隊列
@@ -120,7 +115,7 @@ class DataBaseViewModel(userId: String) : ViewModel() {
         _dataArray.postValue(data)
     }
 
-    fun updateState(state: String) {
+    private fun updateState(state: String) {
         _state.postValue(state)
     }
 }

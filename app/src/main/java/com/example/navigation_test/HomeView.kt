@@ -44,11 +44,10 @@ import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
 
 
-
 //首頁
 var userId = mutableListOf<String>()
 private val chartViewModel = ChartViewModel()
-private val mbViewModel = MemberViewModel()
+val mbViewModel = MemberViewModel()
 
 @Composable
 fun HomeView(navController: NavController) {
@@ -159,48 +158,6 @@ fun HomeView(navController: NavController) {
                 }
             }
             ChartList(data = data.value, chartViewModel = chartViewModel)
-        }
-    }
-}
-
-@Composable
-fun ChartList(data: MutableList<String>, chartViewModel: ChartViewModel) {
-    LazyVerticalGrid(columns = GridCells.Adaptive(450.dp)) {
-        items(data) { item ->
-            Box(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .aspectRatio(1.5f)
-                    .clip(RoundedCornerShape(10.dp))
-                    .border(
-                        width = 2.dp, color = Color.Blue, shape = RoundedCornerShape(10.dp)
-                    ), contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(10.dp)
-                        .fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(5.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(text = mbViewModel.getListData(item), fontSize = 40.sp)
-                        Text(text = "State", fontSize = 25.sp)
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        ChartView(chartViewModel, item)
-                    }
-                }
-            }
         }
     }
 }

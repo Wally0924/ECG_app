@@ -2,24 +2,92 @@ package com.example.navigation_test
 
 import android.graphics.drawable.ShapeDrawable
 import android.graphics.drawable.shapes.RectShape
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
+//主頁右側Lazy圖表
+@Composable
+fun ChartList(data: MutableList<String>, chartViewModel: ChartViewModel) {
+    LazyVerticalGrid(columns = GridCells.Adaptive(450.dp)) {
+        items(data) { item ->
+            ChartItem(item, chartViewModel)
+        }
+    }
+}
+
+@Composable
+fun ChartItem(usrId: String, chartViewModel: ChartViewModel) {
+    val dbViewModel = remember(usrId) { DataBaseViewModel(usrId) }
+    val state by dbViewModel.state.observeAsState(initial = "")
+    Box(
+        modifier = Modifier
+            .padding(8.dp)
+            .aspectRatio(1.5f)
+            .clip(RoundedCornerShape(10.dp))
+            .border(
+                width = 2.dp, color = Color.Blue, shape = RoundedCornerShape(10.dp)
+            ), contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(10.dp)
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(5.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = mbViewModel.getListData(usrId), fontSize = 40.sp)
+                Text(text = "目前狀態: $state", fontSize = 25.sp)
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ChartView(chartViewModel, dbViewModel, usrId)
+            }
+        }
+    }
+}
 
 @Composable
 fun ChartView(
     viewModel: ChartViewModel,
+    dbViewModel: DataBaseViewModel,
     userId: String
 ) {
-    val dbViewModel = DataBaseViewModel(userId)
     val data by dbViewModel.dataArray.observeAsState(initial = ByteArray(10))
     Canvas(
         modifier = Modifier
