@@ -1,30 +1,61 @@
 package com.example.navigation_test
 
+import android.annotation.SuppressLint
 import android.content.ContentValues
+import android.os.Handler
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import java.lang.String
+import java.util.LinkedList
+import java.util.Queue
+import kotlin.Byte
+import kotlin.ByteArray
+import kotlin.Exception
+import kotlin.Int
 
+@SuppressLint("HandlerLeak")
+class DataBaseViewModel(handler: Handler) : ViewModel() {
+    private val r: Runnable = object : Runnable {
+        override fun run() {
+            if (job.isNotEmpty()) {
+                job.poll()?.let { updateData(it) }
 
-class DataBaseViewModel : ViewModel() {
+            }
+            handler.postDelayed(this, 40)
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        mHandler.removeCallbacks(r)
+    }
+
+    init {
+        handler.postDelayed(r, 1)
+    }
+
     private val _uiState = MutableLiveData(mutableListOf<ByteArray>())
     val uiState: LiveData<MutableList<ByteArray>> = _uiState
 
-    private val _dataArray = MutableLiveData(ByteArray(5))
+    private val _dataArray = MutableLiveData(ByteArray(10))
     val dataArray: LiveData<ByteArray> = _dataArray
 
-    private val firebaseDb = FirebaseFirestore.getInstance()
+    private val job: Queue<ByteArray> = LinkedList()
+
+
+    val firebaseDb = FirebaseFirestore.getInstance()
     private val query =
         firebaseDb.collection("USER").document("7pB7dTaNOshzm0OoQCtk").collection("Heartbeat_15s")
-            .orderBy("timestamp").limit(1)
+            .orderBy("timestamp", Query.Direction.DESCENDING).limit(1)
 
 
     private fun updateUiState(newData: MutableList<ByteArray>) {
@@ -35,13 +66,26 @@ class DataBaseViewModel : ViewModel() {
     fun listenData() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                val result = withContext(Dispatchers.IO) { query.get().await() }
-                for (document in result) {
-                    val btlist = document.data["heartbeat"] as List<Byte>
-                    val data = splitDataArray(btlist)
-                    updateUiState(data)
+                query.addSnapshotListener { value, e ->
+                    val dataList = mutableListOf<ByteArray>() // 創建一個列表來存儲數據
+                    if (e != null) {
+                        Log.w(ContentValues.TAG, "Listen failed.", e)
+                        return@addSnapshotListener
+                    }
+
+                    if (value != null) {
+                        for (document in value) {
+                            val btlist = document.data["heartbeat"] as List<Byte>
+                            val data = splitDataArray(btlist)
+                            dataList.addAll(data) // 將數據添加到列表中
+                            Log.d("runnable", "Current data: ${dataList.size}")
+                        }
+                    }
+                    // 在處理完所有數據後，一次性將它們添加到隊列
+                    for (byteArray in dataList) {
+                        addQueue(byteArray)
+                    }
                 }
-                delay(10)
             } catch (e: Exception) {
                 Log.d(ContentValues.TAG, "Error getting documents: ", e)
             }
@@ -52,16 +96,27 @@ class DataBaseViewModel : ViewModel() {
     private fun splitDataArray(data: List<Byte>): MutableList<ByteArray> {
         val result = mutableListOf<ByteArray>()
         var count = 0
-        val temp = ByteArray(5)
+        var temp: ByteArray? = null
         for (bytes in data) {
-            temp[count] = bytes
+            if (count == 0) {
+                temp = ByteArray(10)
+            }
+            temp?.set(count, bytes)
             count++
-            if (count == 5) {
-                result.add(temp)
+            if (count == 10) {
+                result.add(temp!!)
                 count = 0
             }
         }
         return result
+    }
+
+    private fun addQueue(data: ByteArray) {
+        job.add(data)
+    }
+
+    fun updateData(data: ByteArray) {
+        _dataArray.postValue(data)
     }
 
 }

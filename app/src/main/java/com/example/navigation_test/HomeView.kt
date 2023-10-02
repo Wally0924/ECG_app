@@ -1,6 +1,5 @@
 package com.example.navigation_test
 
-import android.util.Log
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -34,24 +33,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.LocalPinnableContainer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.google.firebase.firestore.FirebaseFirestore
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorderAfterLongPress
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
 
 
+val mHandler: android.os.Handler = android.os.Handler()
+
 //首頁
 var userId = mutableListOf<String>()
 private val chartViewModel = ChartViewModel()
 private val mbViewModel = MemberViewModel()
-val dbViewModel = DataBaseViewModel()
+val dbViewModel = DataBaseViewModel(mHandler)
 
 @Composable
 fun HomeView(navController: NavController) {
@@ -200,7 +199,7 @@ fun ChartList(data: MutableList<String>, chartViewModel: ChartViewModel) {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        ChartView(chartViewModel, item)
+                        ChartView(chartViewModel, dbViewModel, item)
                     }
                 }
             }
