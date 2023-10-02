@@ -30,7 +30,7 @@ fun ChartView(
             .background(Color.Black)
     ) {
         val proportion = 1.8f
-        val speed = 1.5f
+        val speed = 1f
         val mask = ShapeDrawable(RectShape())
         val mCanvas = android.graphics.Canvas(viewModel.getBitmap(userId))
         val paint = android.graphics.Paint()
@@ -41,7 +41,7 @@ fun ChartView(
         val canvasWidth = size.width
         val canvasHeight = size.height
         val maskStart = viewModel.getListData(userId).first
-        var maskEnd = (viewModel.getListData(userId).first + 16 * speed)
+        var maskEnd = (viewModel.getListData(userId).first + 10 * speed)
 
         if (maskEnd < canvasWidth) {
             mask.setBounds(maskStart.toInt(), 0, maskEnd.toInt(), canvasHeight.toInt())
@@ -60,12 +60,12 @@ fun ChartView(
             canvasHeight,
             paint
         )
-        for (rawDatum in data!!) {
+        for (rawDatum in data) {
             nextX = viewModel.getListData(userId).first + speed
             if (nextX >= canvasWidth) {
                 nextX -= canvasWidth
             } else {
-                nextY = canvasHeight - (((rawDatum.toInt() + 10) and 0xFF) * proportion)
+                nextY = canvasHeight - (((rawDatum.toInt() and 0xFF) - 40) * proportion)
                 mCanvas.drawLine(
                     viewModel.getListData(userId).first,
                     viewModel.getListData(userId).second,
