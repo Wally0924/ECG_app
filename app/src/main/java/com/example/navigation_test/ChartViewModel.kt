@@ -1,7 +1,11 @@
 package com.example.navigation_test
 
 import android.graphics.Bitmap
+import android.graphics.drawable.ShapeDrawable
+import android.graphics.drawable.shapes.RectShape
 import android.util.Log
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModel
 
 class ChartViewModel : ViewModel() {
@@ -24,8 +28,12 @@ class ChartViewModel : ViewModel() {
         _mbListData.clear()
         for (key in listOfKey) {
             _mbListData[key] = Pair(0f, 0f)
-            _mBitmap[key] = Bitmap.createBitmap(873, 442, Bitmap.Config.ARGB_8888)
+            _mBitmap[key] = Bitmap.createBitmap(873, 440, Bitmap.Config.ARGB_8888)
         }
+    }
+    fun initUsrIdData(userId : String){
+        _mbListData[userId] = Pair(0f, 0f)
+        _mBitmap[userId] = Bitmap.createBitmap(873, 440, Bitmap.Config.ARGB_8888)
     }
 
     fun getListData(key: String): Pair<Float, Float> {
@@ -33,7 +41,6 @@ class ChartViewModel : ViewModel() {
     }
 
     fun getBitmap(key: String): Bitmap {
-        return _mBitmap[key] ?: Bitmap.createBitmap(873, 442, Bitmap.Config.ARGB_8888)
+        return _mBitmap[key] ?: Bitmap.createBitmap(873, 440, Bitmap.Config.ARGB_8888)
     }
-
 }
