@@ -17,7 +17,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -88,64 +90,70 @@ fun ChartView(
     dbViewModel: DataBaseViewModel,
     userId: String
 ) {
-    val data by dbViewModel.dataArray.observeAsState(initial = ByteArray(10))
-    Canvas(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
-        val proportion = 2.0f
-        val speed = 0.5f
-        val mask = ShapeDrawable(RectShape())
-        val mCanvas = android.graphics.Canvas(viewModel.getBitmap(userId))
-        val paint = android.graphics.Paint()
-        paint.strokeWidth = 1f
-        paint.color = Color.Green.toArgb()
-        paint.flags = android.graphics.Paint.ANTI_ALIAS_FLAG
-        paint.style = android.graphics.Paint.Style.FILL_AND_STROKE
-        paint.textSize = 50f
-        paint.strokeJoin = android.graphics.Paint.Join.ROUND
-        var nextX = 0f
-        var nextY = 0f
-        val canvasWidth = size.width
-        val canvasHeight = size.height
-        val maskStart = viewModel.getListData(userId).first
-        var maskEnd = (viewModel.getListData(userId).first + 10 * speed)
+    val data by dbViewModel.dataArray.observeAsState(initial = null)
+    if (!data.contentEquals(ByteArray(10))) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        ) {
+            val proportion = 2.0f
+            val speed = 0.5f
+            val mask = ShapeDrawable(RectShape())
+            val mCanvas = android.graphics.Canvas(viewModel.getBitmap(userId))
+            val paint = android.graphics.Paint()
+            paint.strokeWidth = 1f
+            paint.color = Color.Green.toArgb()
+            paint.flags = android.graphics.Paint.ANTI_ALIAS_FLAG
+            paint.style = android.graphics.Paint.Style.FILL_AND_STROKE
+            paint.textSize = 50f
+            paint.strokeJoin = android.graphics.Paint.Join.ROUND
+            var nextX = 0f
+            var nextY = 0f
+            val canvasWidth = size.width
+            val canvasHeight = size.height
+            val maskStart = viewModel.getListData(userId).first
+            var maskEnd = (viewModel.getListData(userId).first + 10 * speed)
 
-        if (maskEnd < canvasWidth) {
-            mask.setBounds(maskStart.toInt(), 0, maskEnd.toInt(), canvasHeight.toInt())
-            mask.draw(mCanvas)
-        } else {
-            mask.setBounds(maskStart.toInt(), 0, canvasWidth.toInt(), canvasHeight.toInt())
-            mask.draw(mCanvas)
-            maskEnd -= canvasWidth
-            mask.setBounds(0, 0, maskEnd.toInt(), canvasHeight.toInt())
-            mask.draw(mCanvas)
-        }
-        mCanvas.drawLine(
-            maskEnd + 1f,
-            0f,
-            maskEnd + 1f,
-            canvasHeight,
-            paint
-        )
-        for (rawDatum in data) {
-            nextX = viewModel.getListData(userId).first + speed
-            if (nextX >= canvasWidth) {
-                nextX -= canvasWidth
+            if (maskEnd < canvasWidth) {
+                mask.setBounds(maskStart.toInt(), 0, maskEnd.toInt(), canvasHeight.toInt())
+                mask.draw(mCanvas)
             } else {
-                nextY = canvasHeight - (((rawDatum.toInt() and 0xFF) - 65) * proportion)
-                mCanvas.drawLine(
-                    viewModel.getListData(userId).first,
-                    viewModel.getListData(userId).second,
-                    nextX,
-                    nextY,
-                    paint
-                )
+                mask.setBounds(maskStart.toInt(), 0, canvasWidth.toInt(), canvasHeight.toInt())
+                mask.draw(mCanvas)
+                maskEnd -= canvasWidth
+                mask.setBounds(0, 0, maskEnd.toInt(), canvasHeight.toInt())
+                mask.draw(mCanvas)
             }
-            viewModel.updateData(userId, Pair(nextX, nextY))
+            mCanvas.drawLine(
+                maskEnd + 1f,
+                0f,
+                maskEnd + 1f,
+                canvasHeight,
+                paint
+            )
+            for (rawDatum in data!!) {
+                nextX = viewModel.getListData(userId).first + speed
+                if (nextX >= canvasWidth) {
+                    nextX -= canvasWidth
+                } else {
+                    nextY = canvasHeight - (((rawDatum.toInt() and 0xFF) - 65) * proportion)
+                    mCanvas.drawLine(
+                        viewModel.getListData(userId).first,
+                        viewModel.getListData(userId).second,
+                        nextX,
+                        nextY,
+                        paint
+                    )
+                }
+                viewModel.updateData(userId, Pair(nextX, nextY))
+            }
+            drawImage(viewModel.getBitmap(userId).asImageBitmap())
         }
-        drawImage(viewModel.getBitmap(userId).asImageBitmap())
+    }
+    else{
+        Box(modifier = Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
+        }
     }
 }
 

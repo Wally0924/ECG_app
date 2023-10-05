@@ -46,7 +46,7 @@ import org.burnoutcrew.reorderable.reorderable
 
 //首頁
 var userId = mutableListOf<String>()
-private val chartViewModel = ChartViewModel()
+val chartViewModel = ChartViewModel()
 val mbViewModel = MemberViewModel()
 
 @Composable
