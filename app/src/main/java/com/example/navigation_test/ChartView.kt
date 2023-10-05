@@ -94,13 +94,17 @@ fun ChartView(
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        val proportion = 0.9f
-        val speed = 1f
+        val proportion = 2.0f
+        val speed = 0.5f
         val mask = ShapeDrawable(RectShape())
         val mCanvas = android.graphics.Canvas(viewModel.getBitmap(userId))
         val paint = android.graphics.Paint()
-        paint.strokeWidth = 2f
+        paint.strokeWidth = 1f
         paint.color = Color.Green.toArgb()
+        paint.flags = android.graphics.Paint.ANTI_ALIAS_FLAG
+        paint.style = android.graphics.Paint.Style.FILL_AND_STROKE
+        paint.textSize = 50f
+        paint.strokeJoin = android.graphics.Paint.Join.ROUND
         var nextX = 0f
         var nextY = 0f
         val canvasWidth = size.width
@@ -130,7 +134,7 @@ fun ChartView(
             if (nextX >= canvasWidth) {
                 nextX -= canvasWidth
             } else {
-                nextY = canvasHeight - ((rawDatum.toInt() and 0xFF) * proportion)
+                nextY = canvasHeight - (((rawDatum.toInt() and 0xFF) - 65) * proportion)
                 mCanvas.drawLine(
                     viewModel.getListData(userId).first,
                     viewModel.getListData(userId).second,
