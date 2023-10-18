@@ -2,7 +2,7 @@ package com.example.navigation_test
 
 import android.graphics.drawable.ShapeDrawable
 import android.graphics.drawable.shapes.RectShape
-import android.util.Log
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -13,18 +13,25 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,52 +40,86 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 
 //主頁右側Lazy圖表
 @Composable
-fun ChartList(data: MutableList<String>, chartViewModel: ChartViewModel) {
+fun ChartList(
+    data: MutableList<String>,
+    chartViewModel: ChartViewModel,
+    navController: NavController
+) {
     LazyVerticalGrid(columns = GridCells.Adaptive(450.dp)) {
         items(data) { item ->
-            ChartItem(item, chartViewModel)
+            ChartItem(item, chartViewModel, navController)
         }
     }
 }
 
 @Composable
-fun ChartItem(usrId: String, chartViewModel: ChartViewModel) {
+fun ChartItem(
+    usrId: String,
+    chartViewModel: ChartViewModel,
+    navController: NavController
+) {
     val dbViewModel = remember(usrId) { DataBaseViewModel(usrId) }
     val state by dbViewModel.state.observeAsState(initial = "")
-    Box(
-        modifier = Modifier
-            .padding(8.dp)
-            .aspectRatio(1.5f)
-            .clip(RoundedCornerShape(10.dp))
-            .border(
-                width = 2.dp, color = Color.Blue, shape = RoundedCornerShape(10.dp)
-            ), contentAlignment = Alignment.Center
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(10.dp)
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally
+    var isExtend by remember { mutableStateOf(false) }
+    if (isExtend) {
+        DetailPage(
+            dbViewModel = dbViewModel,
+            chartViewModel = chartViewModel,
+            usrId = usrId, state = state,
         ) {
-            Row(
+            isExtend = !isExtend
+        }
+    } else {
+        Box(
+            modifier = Modifier
+                .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
+                .aspectRatio(1.2f)
+                .clip(RoundedCornerShape(10.dp))
+                .border(
+                    width = 2.dp, color = Color(0xFF350DC9), shape = RoundedCornerShape(10.dp)
+                )
+        ) {
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(5.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(10.dp)
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = mbViewModel.getListData(usrId), fontSize = 40.sp)
-                Text(text = "目前狀態: $state", fontSize = 25.sp)
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ChartView(chartViewModel, dbViewModel, usrId)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(5.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(text = mbViewModel.getListData(usrId), fontSize = 32.sp)
+                        Text(text = "心律辨識狀態: $state ", fontSize = 22.sp)
+                        Text(text = "睡眠呼吸辨識狀態: 良好", fontSize = 22.sp)
+                    }
+                    Column {
+                        IconButton(
+                            onClick = { isExtend = !isExtend },
+                        ) {
+                            Icon(
+                                Icons.Outlined.Info,
+                                contentDescription = "Localized description",
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ChartView(chartViewModel, dbViewModel, usrId)
+                }
             }
         }
     }
@@ -150,9 +191,13 @@ fun ChartView(
             }
             drawImage(viewModel.getBitmap(userId).asImageBitmap())
         }
-    }
-    else{
-        Box(modifier = Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
+    } else {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black),
+            contentAlignment = Alignment.Center
+        ) {
         }
     }
 }

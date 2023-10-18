@@ -72,7 +72,6 @@ class DataBaseViewModel(usrId: String) : ViewModel() {
             .orderBy("timestamp", Query.Direction.DESCENDING).limit(1)
 
     private var isFirstDataFetch = true // 新增一個布爾變數，用於追蹤是否是首次讀取資料
-    private val uuu = usrId
 
     private fun listenData() {
         CoroutineScope(Dispatchers.Main).launch {
