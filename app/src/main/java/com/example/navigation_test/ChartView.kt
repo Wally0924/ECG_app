@@ -2,7 +2,6 @@ package com.example.navigation_test
 
 import android.graphics.drawable.ShapeDrawable
 import android.graphics.drawable.shapes.RectShape
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -13,10 +12,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -67,9 +64,9 @@ fun ChartItem(
     var isExtend by remember { mutableStateOf(false) }
     if (isExtend) {
         DetailPage(
+            usrId = usrId,
             dbViewModel = dbViewModel,
-            chartViewModel = chartViewModel,
-            usrId = usrId, state = state,
+            chartViewModel = chartViewModel, state = state
         ) {
             isExtend = !isExtend
         }
@@ -103,7 +100,9 @@ fun ChartItem(
                     }
                     Column {
                         IconButton(
-                            onClick = { isExtend = !isExtend },
+                            onClick = {
+                                isExtend = !isExtend
+                            },
                         ) {
                             Icon(
                                 Icons.Outlined.Info,
