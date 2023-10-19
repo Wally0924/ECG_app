@@ -68,6 +68,7 @@ fun ChartItem(
             dbViewModel = dbViewModel,
             chartViewModel = chartViewModel, state = state
         ) {
+            chartViewModel.initUsrIdKey(usrId)
             isExtend = !isExtend
         }
     } else {
@@ -101,6 +102,7 @@ fun ChartItem(
                     Column {
                         IconButton(
                             onClick = {
+                                chartViewModel.initUsrIdKey(usrId)
                                 isExtend = !isExtend
                             },
                         ) {
