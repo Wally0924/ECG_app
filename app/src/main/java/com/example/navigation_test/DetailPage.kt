@@ -59,6 +59,7 @@ fun DetailPage(
     dbViewModel: DataBaseViewModel,
     chartViewModel: ChartViewModel,
     state: String,
+    apneaState: String,
     onDismissRequest: () -> Unit
 ) {
     val detailViewModel = remember(usrId) { DetailViewModel(usrId) }
@@ -155,7 +156,7 @@ fun DetailPage(
                                     bottom = 10.dp,
                                     end = 20.dp,
                                 ),
-                                color = if(state == "Normal") Color.Green else if (state == "尚未連線") Color.Black else Color.Red
+                                color = if (state == "Normal") Color.Green else if (state == "尚未連線") Color.Black else Color.Red
                             )
                         }
                     }
@@ -182,7 +183,7 @@ fun DetailPage(
                             verticalArrangement = Arrangement.Center
                         ) {
                             Text(
-                                text = "良好",
+                                text = apneaState,
                                 fontSize = 30.sp,
                                 modifier = Modifier.padding(
                                     top = 10.dp,
@@ -190,7 +191,7 @@ fun DetailPage(
                                     bottom = 10.dp,
                                     end = 20.dp,
                                 ),
-                                color = Color.Black
+                                color = if (apneaState == "正常") Color.Green else if (apneaState == "尚未連線" || apneaState == "測量中") Color.Black else Color.Red
                             )
                         }
                     }
@@ -283,12 +284,12 @@ fun DetailPage(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         val nmlPercentage =
-                        apneaCount?.let {
-                            HourApneaCountChart(
-                                apneaCount!!,
-                                detailViewModel.apneaRecordSum
-                            )
-                        }
+                            apneaCount?.let {
+                                HourApneaCountChart(
+                                    apneaCount!!,
+                                    detailViewModel.apneaRecordSum
+                                )
+                            }
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -380,7 +381,7 @@ fun getBarData(value: Int, index: Int, color: Color): BarData {
 }
 
 @Composable
-fun HourApneaCountChart(apneaCount: Int, sum: Int):Float {
+fun HourApneaCountChart(apneaCount: Int, sum: Int): Float {
     val nmlPercentage = if (apneaCount == 0) 0f else apneaCount.toFloat() / sum.toFloat()
     val inmlPercentage = if (nmlPercentage == 0f) 1f else 1.toFloat() - nmlPercentage
 

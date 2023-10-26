@@ -61,12 +61,13 @@ fun ChartItem(
 ) {
     val dbViewModel = remember(usrId) { DataBaseViewModel(usrId) }
     val state by dbViewModel.state.observeAsState(initial = "")
+    val apneaState by dbViewModel.apneaState.observeAsState(initial = "")
     var isExtend by remember { mutableStateOf(false) }
     if (isExtend) {
         DetailPage(
             usrId = usrId,
             dbViewModel = dbViewModel,
-            chartViewModel = chartViewModel, state = state
+            chartViewModel = chartViewModel, state = state , apneaState = apneaState
         ) {
             chartViewModel.initUsrIdKey(usrId)
             isExtend = !isExtend
@@ -121,9 +122,9 @@ fun ChartItem(
                                 color = Color.Black
                             )
                             Text(
-                                text = "良好",
+                                text = apneaState,
                                 fontSize = 22.sp,
-                                color = Color.Black
+                                color = if (apneaState == "正常") Color.Green else if (apneaState == "尚未連線" || apneaState == "測量中") Color.Black else Color.Red
                             )
                         }
                     }

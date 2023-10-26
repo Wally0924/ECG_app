@@ -36,6 +36,7 @@ class DataBaseViewModel(usrId: String) : ViewModel() {
     // 定義一個計時器任務，當計時器達到指定時間時更改 state
     private val timerRunnable = Runnable {
         updateState("尚未連線") // 更改 state 為 "尚未連線"
+        updateApneaState("尚未連線")// 更改 apneaState 為 "尚未連線"
         chartViewModel.initUsrIdData(usrId) //刷新圖資訊
         job.clear()  // 清空隊列
         updateData(ByteArray(10)) // 更新數據為空
@@ -44,7 +45,7 @@ class DataBaseViewModel(usrId: String) : ViewModel() {
     // 重置計時器
     private fun resetTimer() {
         timeHandler.removeCallbacks(timerRunnable) // 移除之前的計時器任務
-        timeHandler.postDelayed(timerRunnable, 6500) // 設定計時器為 6 秒
+        timeHandler.postDelayed(timerRunnable, 6500) // 設定計時器為 6.5 秒
     }
 
     override fun onCleared() {
@@ -60,6 +61,9 @@ class DataBaseViewModel(usrId: String) : ViewModel() {
     private val _state = MutableLiveData("尚未連線")
     val state: LiveData<String> = _state
 
+    private val _apneaState = MutableLiveData("尚未連線")
+    val apneaState: LiveData<String> = _apneaState
+
     private val _dataArray = MutableLiveData(ByteArray(10))
     val dataArray: LiveData<ByteArray> = _dataArray
 
@@ -70,40 +74,65 @@ class DataBaseViewModel(usrId: String) : ViewModel() {
     private val query =
         firebaseDb.collection("USER").document(usrId).collection("Heartbeat_15s")
             .orderBy("timestamp", Query.Direction.DESCENDING).limit(1)
+    private val Apneaquery =
+        firebaseDb.collection("USER").document(usrId).collection("apneaRecord")
+            .orderBy("timestamp", Query.Direction.DESCENDING).limit(1)
 
     private var isFirstDataFetch = true // 新增一個布爾變數，用於追蹤是否是首次讀取資料
+    private var isFirstDataApnea = true
 
     private fun listenData() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 query.addSnapshotListener { value, e ->
-                    val dataList = mutableListOf<ByteArray>() // 創建一個列表來存儲數據
-                    if (e != null) {
-                        Log.w(ContentValues.TAG, "Listen failed.", e)
-                        return@addSnapshotListener
-                    }
+                    if (!isFirstDataFetch) {
+                        if(_apneaState.value == "尚未連線") {
+                            updateApneaState("測量中")
+                        }
+                        val dataList = mutableListOf<ByteArray>() // 創建一個列表來存儲數據
+                        if (e != null) {
+                            Log.w(ContentValues.TAG, "Listen failed.", e)
+                            return@addSnapshotListener
+                        }
 
-                    if (value != null) {
-                        for (document in value) {
-                            val btlist = document.data["heartbeat"] as List<Byte>
-                            val data = splitDataArray(btlist)
-                            dataList.addAll(data) // 將數據添加到列表中
-                            val state = document.data["state"] as String
-                            if (!isFirstDataFetch) {
-                                updateState(state)
-                                resetTimer() // 重置計時器
+                        if (value != null) {
+                            for (document in value) {
+                                val btlist = document.data["heartbeat"] as List<Byte>
+                                val data = splitDataArray(btlist)
+                                dataList.addAll(data) // 將數據添加到列表中
+                                val state = document.data["state"] as String
+                                if (!isFirstDataFetch) {
+                                    updateState(state)
+                                    resetTimer() // 重置計時器
+                                }
                             }
                         }
-                    }
-
-                    // 過濾掉首次讀取的情況
-                    if (!isFirstDataFetch) {
                         // 在處理完所有數據後，一次性將它們添加到隊列
                         for (byteArray in dataList) {
                             addQueue(byteArray)
                         }
                     } else {
                         isFirstDataFetch = false // 將首次讀取標誌設為 false，以後的資料都會被處理
+                    }
+                }
+                Apneaquery.addSnapshotListener { value, e ->
+                    if (!isFirstDataApnea) {
+                        if (e != null) {
+                            Log.w(ContentValues.TAG, "Listen failed.", e)
+                            return@addSnapshotListener
+                        }
+                        if (value != null) {
+                            for (document in value) {
+                                val state = document.data["state"] as Number
+                                if (state.toInt() == 0) {
+                                    updateApneaState("正常")
+                                } else {
+                                    updateApneaState("異常")
+                                }
+                            }
+                        }
+                    } else {
+                        isFirstDataApnea = false
                     }
                 }
             } catch (e: Exception) {
@@ -142,5 +171,10 @@ class DataBaseViewModel(usrId: String) : ViewModel() {
     private fun updateState(state: String) {
         _state.postValue(state)
     }
+
+    private fun updateApneaState(state: String) {
+        _apneaState.postValue(state)
+    }
+
 }
 
