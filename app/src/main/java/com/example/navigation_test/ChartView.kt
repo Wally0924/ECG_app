@@ -96,8 +96,36 @@ fun ChartItem(
                 ) {
                     Column {
                         Text(text = mbViewModel.getListData(usrId), fontSize = 32.sp)
-                        Text(text = "心律辨識狀態: $state ", fontSize = 22.sp)
-                        Text(text = "睡眠呼吸辨識狀態: 良好", fontSize = 22.sp)
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "心律辨識狀態: ",
+                                fontSize = 22.sp,
+                                color = Color.Black
+                            )
+                            Text(
+                                text = state,
+                                fontSize = 22.sp,
+                                color = if (state == "Normal") Color.Green else if (state == "尚未連線") Color.Black else Color.Red
+                            )
+                        }
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "睡眠呼吸辨識狀態: ",
+                                fontSize = 22.sp,
+                                color = Color.Black
+                            )
+                            Text(
+                                text = "良好",
+                                fontSize = 22.sp,
+                                color = Color.Black
+                            )
+                        }
                     }
                     Column {
                         IconButton(

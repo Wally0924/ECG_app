@@ -14,7 +14,7 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 class DetailViewModel(usrId: String) : ViewModel() {
-
+    var apneaRecordSum = 0
     private val _arymaCount = MutableLiveData(StateData(0, 0, 0, 0, 0))
     val arymaCount: LiveData<StateData> = _arymaCount
 
@@ -30,10 +30,11 @@ class DetailViewModel(usrId: String) : ViewModel() {
     init {
         _apneaCount.value = 0
         _arymaCount.value = StateData(0, 0, 0, 0, 0)
+        apneaRecordSum = 0
         listenData()
     }
 
-    fun listenData() {
+    private fun listenData() {
         val currentTime = Timestamp.now()
         val oneHourAgoTimestamp = Timestamp(currentTime.seconds - 3600, currentTime.nanoseconds)
 
@@ -53,13 +54,19 @@ class DetailViewModel(usrId: String) : ViewModel() {
 
             // 在主線程中更新 UI
             withContext(Dispatchers.Main) {
-                _apneaCount.value = apneaQuery.size()
-
+                for(document in apneaQuery) {
+                    val state = document.data["state"] as Number
+                    //算正常的次數
+                    if(state.toInt() == 0) {
+                        _apneaCount.value = _apneaCount.value?.plus(1)
+                    }
+                }
+                apneaRecordSum = apneaQuery.size()
                 for (document in arymaQuery) {
                     val state = document.data["state"] as? String
                     state?.let {
                         when (state) {
-                            "N" -> _arymaCount.value =
+                            "Normal" -> _arymaCount.value =
                                 _arymaCount.value?.copy(nState = _arymaCount.value!!.nState + 1)
 
                             "S" -> _arymaCount.value =
@@ -76,8 +83,8 @@ class DetailViewModel(usrId: String) : ViewModel() {
                         }
                     }
                 }
-                Log.d("DetailViewModel", "apneaCount: ${_apneaCount.value}")
-                Log.d("DetailViewModel", "apneaCount: ${_arymaCount.value}")
+//                Log.d("DetailViewModel", "apneaCount: ${_apneaCount.value}")
+//                Log.d("DetailViewModel", "apneaCount: ${_arymaCount.value}")
             }
         }
     }
