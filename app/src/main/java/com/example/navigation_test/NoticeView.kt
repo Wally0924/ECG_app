@@ -58,6 +58,7 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import androidx.compose.material3.ListItem
 
 data class Patient(
     val id : String,
@@ -173,8 +174,8 @@ fun PatientList(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onPatientSelected(patient) },
-                    headlineText = { Text(patient.name) },
-                    supportingText = { Text(patient.email) },
+                    headlineContent = { Text(patient.name) },
+                    supportingContent = { Text(patient.email) },
                     leadingContent = {
                         Icon(
                             Icons.Filled.Person,

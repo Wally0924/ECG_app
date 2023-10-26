@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -17,7 +16,6 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
@@ -26,10 +24,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -37,7 +32,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.set
 import androidx.navigation.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -47,7 +41,6 @@ import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
 import com.google.firebase.auth.FirebaseAuth
-import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
     private lateinit var mAuth: FirebaseAuth
@@ -161,35 +154,35 @@ fun MainView(email: String?, signOutClicked: () -> Unit) {
         NavRail(navController = navController) { signOutClicked() }
         Scaffold(
             scaffoldState = scaffoldState,
-            topBar = {
-                TopAppBar(
-                    title = { Text(text = "") },
-                    backgroundColor = Color(0xFF8E58E9),
-                    actions = {
-                        Row(
-                            modifier = Modifier.padding(start = 20.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Filled.Person,
-                                contentDescription = "user",
-                                modifier = Modifier
-                                    .size(35.dp)
-                                    .padding(end = 6.dp)
-                            )
-                            if (email != null) {
-                                Text(
-                                    text = email,
-                                    fontSize = 20.sp,
-                                    modifier = Modifier.padding(end = 20.dp)
-                                )
-                            }
-                        }
-                    }
-                )
-            }
+//            topBar = {
+//                TopAppBar(
+//                    title = { Text(text = "") },
+//                    backgroundColor = Color(0xFF8E58E9),
+//                    actions = {
+//                        Row(
+//                            modifier = Modifier.padding(start = 20.dp),
+//                            verticalAlignment = Alignment.CenterVertically
+//                        ) {
+//                            Icon(
+//                                Icons.Filled.Person,
+//                                contentDescription = "user",
+//                                modifier = Modifier
+//                                    .size(35.dp)
+//                                    .padding(end = 6.dp)
+//                            )
+//                            if (email != null) {
+//                                Text(
+//                                    text = email,
+//                                    fontSize = 20.sp,
+//                                    modifier = Modifier.padding(end = 20.dp)
+//                                )
+//                            }
+//                        }
+//                    }
+//                )
+//            }
         ) {
-            Navigation(navController = navController)
+            Navigation(navController = navController , email = email)
         }
     }
 }
@@ -217,7 +210,7 @@ fun NavRail(navController: NavHostController, signOutClicked: () -> Unit) {
                 modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 45.dp)
             )
         },
-        containerColor = Color(0xFFF5EFFF)
+        containerColor = Color(0xFFE8DAFF)
     ) {
         items.forEachIndexed { index, item ->
             NavigationRailItem(
@@ -254,11 +247,11 @@ fun NavRail(navController: NavHostController, signOutClicked: () -> Unit) {
 
 
 @Composable
-fun Navigation(navController: NavHostController) {
+fun Navigation(navController: NavHostController , email: String?) {
     NavHost(navController = navController, startDestination = "home") {
         composable("home") {
             Log.d("ChartView", "Home這裡檢查有沒有被重繪")
-            HomeView(navController)
+            HomeView(navController,email)
         }
         composable("addMember") {
             AlertDialogSample(navController)
