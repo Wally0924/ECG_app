@@ -9,12 +9,16 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 class DetailViewModel(usrId: String) : ViewModel() {
     var apneaRecordSum = 0
+    private val _dataComplete = MutableLiveData(false)
+    val dataComplete: LiveData<Boolean> = _dataComplete
+
     private val _arymaCount = MutableLiveData(StateData(0, 0, 0, 0, 0))
     val arymaCount: LiveData<StateData> = _arymaCount
 
@@ -54,10 +58,10 @@ class DetailViewModel(usrId: String) : ViewModel() {
 
             // 在主線程中更新 UI
             withContext(Dispatchers.Main) {
-                for(document in apneaQuery) {
+                for (document in apneaQuery) {
                     val state = document.data["state"] as Number
                     //算正常的次數
-                    if(state.toInt() == 0) {
+                    if (state.toInt() == 0) {
                         _apneaCount.value = _apneaCount.value?.plus(1)
                     }
                 }
@@ -83,9 +87,8 @@ class DetailViewModel(usrId: String) : ViewModel() {
                         }
                     }
                 }
-//                Log.d("DetailViewModel", "apneaCount: ${_apneaCount.value}")
-//                Log.d("DetailViewModel", "apneaCount: ${_arymaCount.value}")
             }
+            _dataComplete.postValue(true)
         }
     }
 
