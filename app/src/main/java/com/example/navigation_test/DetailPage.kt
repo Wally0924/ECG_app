@@ -1,12 +1,10 @@
 package com.example.navigation_test
 
-import android.graphics.Typeface
-import android.text.TextUtils
 import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,7 +16,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.outlined.ArrowBack
@@ -52,27 +52,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import co.yml.charts.axis.AxisData
-import co.yml.charts.axis.DataCategoryOptions
-import co.yml.charts.common.model.PlotType
-import co.yml.charts.common.model.Point
-import co.yml.charts.ui.barchart.BarChart
-import co.yml.charts.ui.barchart.models.BarChartData
-import co.yml.charts.ui.barchart.models.BarData
-import co.yml.charts.ui.barchart.models.BarStyle
-import co.yml.charts.ui.piechart.charts.PieChart
-import co.yml.charts.ui.piechart.models.PieChartConfig
-import co.yml.charts.ui.piechart.models.PieChartData
-import com.airbnb.lottie.compose.LottieAnimation
-import com.airbnb.lottie.compose.LottieCompositionSpec
-import com.airbnb.lottie.compose.LottieConstants
-import com.airbnb.lottie.compose.animateLottieCompositionAsState
-import com.airbnb.lottie.compose.rememberLottieComposition
 import java.math.RoundingMode
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun DetailPage(
@@ -84,9 +69,6 @@ fun DetailPage(
     onDismissRequest: () -> Unit
 ) {
     val detailViewModel = remember(usrId) { DetailViewModel(usrId) }
-    val apneaCount by detailViewModel.apneaCount.observeAsState()
-    val arymaCount by detailViewModel.arymaCount.observeAsState()
-    val dataComplete by detailViewModel.dataComplete.observeAsState()
 
     Dialog(
         onDismissRequest = { onDismissRequest() },
@@ -127,10 +109,10 @@ fun DetailPage(
                 }
             }
             TabField(
-                apneaCount,
-                arymaCount,
-                dataComplete,
-                detailViewModel, dbViewModel, state, apneaState, usrId
+                detailViewModel,
+                dbViewModel,
+                state,
+                apneaState, usrId
             )
         }
     }
@@ -140,9 +122,6 @@ fun DetailPage(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TabField(
-    apneaCount: Int?,
-    arymaCount: DetailViewModel.StateData?,
-    dataComplete: Boolean?,
     detailViewModel: DetailViewModel,
     dbViewModel: DataBaseViewModel,
     state: String,
@@ -163,11 +142,18 @@ fun TabField(
     )
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val pagerState = rememberPagerState { tabItems.size }
-    val selectDate = remember { mutableStateOf(dateFormat(Calendar.getInstance().time)) }
+    val selectDate = remember { mutableStateOf(getCurrentDate()) }
+    val apneaCount by detailViewModel.apneaCount.observeAsState()
+    val arymaCount by detailViewModel.arymaCount.observeAsState()
+    val dataComplete by detailViewModel.dataComplete.observeAsState()
+    val sevenDaysData by detailViewModel.sevenDaysData.observeAsState()
     val dateRange = (-6..0).map {
         val calendar = Calendar.getInstance()
         calendar.add(Calendar.DAY_OF_MONTH, it)
-        dateFormat(calendar.time)
+        val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
+            timeZone = TimeZone.getTimeZone("GMT+8")
+        }
+        format.format(calendar.time)
     }
     LaunchedEffect(selectedTabIndex) {
         pagerState.animateScrollToPage(selectedTabIndex)
@@ -428,14 +414,28 @@ fun TabField(
 
                 1 ->
                     //病患歷史狀態分佈
-                    Column(modifier = Modifier.fillMaxSize()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        Text(
+                            text = "心律狀況",
+                            fontSize = 22.sp,
+                            modifier = Modifier
+                                .width(200.dp)
+                                .padding(start = 40.dp, top = 30.dp)
+                                .background(Color.White, shape = RoundedCornerShape(20.dp))
+                                .border(1.dp, Color(0XFF8600FF), RoundedCornerShape(20.dp)),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
                         Card(
                             colors = CardDefaults.cardColors(
                                 containerColor = Color.White,
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f)
+                                .height(300.dp)
                                 .clip(RoundedCornerShape(20.dp))
                                 .padding(15.dp)
                         ) {
@@ -456,12 +456,13 @@ fun TabField(
                                     Icon(
                                         imageVector = Icons.Outlined.KeyboardArrowLeft,
                                         contentDescription = null,
-                                        tint = Color.Black
+                                        tint = Color.Black,
+                                        modifier = Modifier.size(30.dp)
                                     )
                                 }
                                 Text(
                                     text =
-                                    if (selectDate.value == dateFormat(Calendar.getInstance().time))
+                                    if (selectDate.value == getCurrentDate())
                                         "今日" else selectDate.value,
                                     fontSize = 22.sp,
                                     modifier = Modifier
@@ -482,18 +483,68 @@ fun TabField(
                                     Icon(
                                         imageVector = Icons.Outlined.KeyboardArrowRight,
                                         contentDescription = null,
-                                        tint = Color.Black
+                                        tint = Color.Black,
+                                        modifier = Modifier.size(30.dp)
                                     )
                                 }
                             }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                sevenDaysData?.let {
+                                    VerticalStackedBarChart(
+                                        selectDate.value,
+                                        it
+                                    )
+                                }
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 10.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                HistoryChartLabelText(
+                                    labelText = "N",
+                                    color = Color(0xFF28FF28)
+                                )
+                                HistoryChartLabelText(
+                                    labelText = "S",
+                                    color = Color(0xFFF9F900)
+                                )
+                                HistoryChartLabelText(
+                                    labelText = "V",
+                                    color = Color(0xFFFFAA00)
+                                )
+                                HistoryChartLabelText(
+                                    labelText = "F",
+                                    color = Color(0xFFFF6600)
+                                )
+                                HistoryChartLabelText(
+                                    labelText = "Q",
+                                    color = Color(0xFFFF0000)
+                                )
+                            }
                         }
+                        Text(
+                            text = "睡眠呼吸中止狀況",
+                            fontSize = 22.sp,
+                            modifier = Modifier
+                                .width(300.dp)
+                                .padding(start = 40.dp, top = 10.dp)
+                                .background(Color.White, shape = RoundedCornerShape(20.dp))
+                                .border(1.dp, Color(0XFF8600FF), RoundedCornerShape(20.dp)),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
                         Card(
                             colors = CardDefaults.cardColors(
                                 containerColor = Color.White,
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f)
+                                .height(300.dp)
                                 .clip(RoundedCornerShape(20.dp))
                                 .padding(15.dp)
                         ) {
@@ -510,159 +561,18 @@ fun TabField(
 
 }
 
-@Composable
-fun HourArymaCountChart(arymaCount: DetailViewModel.StateData) {
-    val xLabel = listOf("N", "S", "V", "F", "Q")
-    val barData = listOf(
-        getBarData(arymaCount.nState, 0, Color(0xFF28FF28)),
-        getBarData(arymaCount.sState, 1, Color(0xFFF9F900)),
-        getBarData(arymaCount.vState, 2, Color(0xFFFFAA00)),
-        getBarData(arymaCount.fState, 3, Color(0xFFFF6600)),
-        getBarData(arymaCount.qState, 4, Color(0xFFFF0000))
-    )
-    val yStepSize = 10
-    val xAxisData = AxisData.Builder()
-        .axisStepSize(35.dp)
-        .steps(barData.size - 1)
-        .bottomPadding(12.dp)
-        .axisLabelAngle(15f)
-        .startDrawPadding(50.dp)
-        .shouldDrawAxisLineTillEnd(true)
-        .labelData { index -> xLabel[index] }
-        .typeFace(Typeface.defaultFromStyle(Typeface.BOLD))
-        .axisLabelFontSize(20.sp)
-        .build()
-    val yAxisData = AxisData.Builder()
-        .steps(yStepSize)
-        .labelAndAxisLinePadding(20.dp)
-        .axisOffset(20.dp)
-//        .labelData { index -> (index * (maxRange / yStepSize)).toString() }
-        .build()
-    val barChartData = BarChartData(
-        chartData = barData,
-        xAxisData = xAxisData,
-        yAxisData = yAxisData,
-        barStyle = BarStyle(
-            paddingBetweenBars = 20.dp,
-            barWidth = 25.dp
-        ),
-        showYAxis = false,
-        showXAxis = true,
-        horizontalExtraSpace = 10.dp,
-    )
-    BarChart(
-        modifier = Modifier
-            .height(200.dp)
-            .width(290.dp), barChartData = barChartData
-    )
-}
-
-fun getBarData(value: Int, index: Int, color: Color): BarData {
-    val point = Point(
-        index.toFloat(),
-        value.toFloat()
-    )
-    return BarData(
-        point = point,
-        color = color,
-        dataCategoryOptions = DataCategoryOptions(),
-        label = ""
-    )
-}
-
-@Composable
-fun HourApneaCountChart(apneaCount: Int, sum: Int): Float {
-    val nmlPercentage = if (apneaCount == 0) 0f else apneaCount.toFloat() / sum.toFloat()
-    val inmlPercentage = if (nmlPercentage == 0f) 1f else 1.toFloat() - nmlPercentage
-
-//    val nmlPercentage = 0.8f
-//    val inmlPercentage = 1 - nmlPercentage
-
-    val pieChartData = PieChartData(
-        slices = listOf(
-            PieChartData.Slice("正常", nmlPercentage, Color(0xFF00FF0D)),
-            PieChartData.Slice("不正常", inmlPercentage, Color(0xFFFF0000)),
-        ),
-        plotType = PlotType.Pie
-    )
-
-    val pieChartConfig =
-        PieChartConfig(
-            activeSliceAlpha = .9f,
-            isEllipsizeEnabled = true,
-            sliceLabelEllipsizeAt = TextUtils.TruncateAt.MIDDLE,
-            sliceLabelTypeface = Typeface.defaultFromStyle(Typeface.ITALIC),
-            isAnimationEnable = true,
-            chartPadding = 20,
-            showSliceLabels = false,
-            labelVisible = false,
-            animationDuration = 1200
-        )
-    PieChart(
-        modifier = Modifier
-            .width(200.dp)
-            .height(200.dp)
-            .padding(start = 15.dp),
-        pieChartData,
-        pieChartConfig
-    ) {
-        // on slice click
-    }
-
-    return nmlPercentage
-}
-
-@Composable
-fun ChartLabelText(labelText: String, color: Color) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            modifier = Modifier
-                .height(20.dp)
-                .width(20.dp)
-                .background(color = color)
-        )
-        Spacer(modifier = Modifier.padding(start = 20.dp))
-        Text(
-            text = labelText,
-            fontSize = 22.sp,
-            color = Color.Black
-        )
-    }
-}
-
-
-@Composable
-fun Loading() {
-    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.loading))
-    val isPlaying by remember { mutableStateOf(true) }
-    val progress by animateLottieCompositionAsState(
-        composition = composition,
-        isPlaying = isPlaying,
-        iterations = LottieConstants.IterateForever
-    )
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        LottieAnimation(
-            modifier = Modifier.size(400.dp),
-            composition = composition,
-            progress = progress
-        )
-    }
-}
-
 fun dateFormat(date: Date): String {
     return SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date)
 }
-data class TabItem(
-    val title: String,
-    val unselectIcon: ImageVector,
-    val selectedIcon: ImageVector
-)
+
+fun getCurrentDate(): String {
+    val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
+        timeZone = TimeZone.getTimeZone("GMT+8")
+    }
+    return format.format(System.currentTimeMillis())
+}
+
+
 
 
 

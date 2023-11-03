@@ -40,7 +40,13 @@ import com.example.navigation_test.ui.theme.Navigation_testTheme
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 class MainActivity : ComponentActivity() {
     private lateinit var mAuth: FirebaseAuth
@@ -182,7 +188,7 @@ fun MainView(email: String?, signOutClicked: () -> Unit) {
 //                )
 //            }
         ) {
-            Navigation(navController = navController , email = email)
+            Navigation(navController = navController, email = email)
         }
     }
 }
@@ -247,11 +253,11 @@ fun NavRail(navController: NavHostController, signOutClicked: () -> Unit) {
 
 
 @Composable
-fun Navigation(navController: NavHostController , email: String?) {
+fun Navigation(navController: NavHostController, email: String?) {
     NavHost(navController = navController, startDestination = "home") {
         composable("home") {
             Log.d("ChartView", "Home這裡檢查有沒有被重繪")
-            HomeView(navController,email)
+            HomeView(navController, email)
         }
         composable("addMember") {
             AlertDialogSample(navController)
@@ -275,11 +281,37 @@ fun Navigation(navController: NavHostController , email: String?) {
 
 @Composable
 fun HelpScreen() {
-    Log.d("HelpScreen", "HelpScreen重新繪製")
-//    ChartView(
-//        // 將 data 傳遞給 ChartView，當 data 變化時，Compose 會自動重新繪製
-//        viewModel = chartViewModel
-//    )
+    Button(
+        onClick = {
+            val currentTime = Timestamp.now()
+            val sevenDayAgoTime = sevenDayAgo().let { timestamp ->
+                Timestamp(timestamp.seconds, timestamp.nanoseconds)
+            }
+            Log.d("DetailViewModel", "sevenDayAgoTime: $sevenDayAgoTime")
+            Log.d("DetailViewModel", "currentTime: $currentTime")
+        },
+        modifier = Modifier
+            .padding(20.dp)
+            .fillMaxWidth()
+    ) {
+        Text(text = "Help")
+    }
+}
+fun sevenDayAgo(): Timestamp {
+    // 創建一個 Calendar 實例
+    val calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8"))
+
+    // 計算並設定 7 天前的日期
+    calendar.add(Calendar.DAY_OF_MONTH, -6)
+
+    // 將日期設定為當天的0時0分0秒
+    calendar.set(Calendar.HOUR_OF_DAY, 0)
+    calendar.set(Calendar.MINUTE, 0)
+    calendar.set(Calendar.SECOND, 0)
+    calendar.set(Calendar.MILLISECOND, 0)
+
+    // 創建一個 Timestamp 物件，表示 7 天前的日期的0時
+    return Timestamp((calendar.time))
 }
 
 

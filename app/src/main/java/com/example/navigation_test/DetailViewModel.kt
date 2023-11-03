@@ -1,5 +1,6 @@
 package com.example.navigation_test
 
+import android.annotation.SuppressLint
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -7,14 +8,22 @@ import androidx.lifecycle.ViewModel
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.QuerySnapshot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 class DetailViewModel(usrId: String) : ViewModel() {
+    private var _sevenDaysData = MutableLiveData(mapOf<String, List<StateData>>())
+    val sevenDaysData: LiveData<Map<String, List<StateData>>> = _sevenDaysData
+
     var apneaRecordSum = 0
     private val _dataComplete = MutableLiveData(false)
     val dataComplete: LiveData<Boolean> = _dataComplete
@@ -36,6 +45,7 @@ class DetailViewModel(usrId: String) : ViewModel() {
         _arymaCount.value = StateData(0, 0, 0, 0, 0)
         apneaRecordSum = 0
         listenData()
+//        historyListenData()
     }
 
     private fun listenData() {
@@ -59,6 +69,7 @@ class DetailViewModel(usrId: String) : ViewModel() {
             // 在主線程中更新 UI
             withContext(Dispatchers.Main) {
                 for (document in apneaQuery) {
+                    Log.d("apneaQuery", "${apneaQuery.size()}")
                     val state = document.data["state"] as Number
                     //算正常的次數
                     if (state.toInt() == 0) {
@@ -67,6 +78,7 @@ class DetailViewModel(usrId: String) : ViewModel() {
                 }
                 apneaRecordSum = apneaQuery.size()
                 for (document in arymaQuery) {
+                    Log.d("apneaQuery", "${arymaQuery.size()}")
                     val state = document.data["state"] as? String
                     state?.let {
                         when (state) {
@@ -92,13 +104,97 @@ class DetailViewModel(usrId: String) : ViewModel() {
         }
     }
 
+    fun historyListenData() {
+        val currentTime = Timestamp.now()
+        val sevenDayAgoTime = sevenDayAgo()
+        CoroutineScope(Dispatchers.IO).launch {
+            val query = queryAryma
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .whereLessThanOrEqualTo("timestamp", currentTime)
+                .whereGreaterThanOrEqualTo("timestamp", sevenDayAgoTime)
+            val querySnapshot = query.get().await()
+            Log.d("apneaQuery", "${querySnapshot.size()}")
+            val newSevenDaysData = buildNewSevenDaysData(querySnapshot)
+
+            withContext(Dispatchers.Main) {
+                _sevenDaysData.value = newSevenDaysData
+            }
+
+        }
+    }
+
+    private fun buildNewSevenDaysData(querySnapshot: QuerySnapshot): Map<String, List<StateData>> {
+        val newSevenDaysData = mutableMapOf<String, List<StateData>>()
+
+        for (document in querySnapshot.documents) {
+            val dataTimestamp = document.getTimestamp("timestamp")
+            val state = document.getString("state")
+
+            if (dataTimestamp != null && state != null) {
+                val dateKey = dateFormat(dataTimestamp.toDate())
+                val hourOfDay = calculateHourOfDay(dataTimestamp.seconds * 1000)
+                newSevenDaysData.getOrPut(dateKey) { MutableList(24) { StateData(0, 0, 0, 0, 0) } }
+                when (state) {
+                    "Normal" -> newSevenDaysData[dateKey]?.get(hourOfDay)?.nState =
+                        newSevenDaysData[dateKey]?.get(hourOfDay)?.nState?.plus(1) ?: 0
+
+                    "S" -> newSevenDaysData[dateKey]?.get(hourOfDay)?.sState =
+                        newSevenDaysData[dateKey]?.get(hourOfDay)?.sState?.plus(1) ?: 0
+
+                    "V" -> newSevenDaysData[dateKey]?.get(hourOfDay)?.vState =
+                        newSevenDaysData[dateKey]?.get(hourOfDay)?.vState?.plus(1) ?: 0
+
+                    "F" -> newSevenDaysData[dateKey]?.get(hourOfDay)?.fState =
+                        newSevenDaysData[dateKey]?.get(hourOfDay)?.fState?.plus(1) ?: 0
+
+                    "Q" -> newSevenDaysData[dateKey]?.get(hourOfDay)?.qState =
+                        newSevenDaysData[dateKey]?.get(hourOfDay)?.qState?.plus(1) ?: 0
+                }
+            }
+        }
+        return newSevenDaysData
+    }
+
+
+    @SuppressLint("SimpleDateFormat")
+    fun calculateHourOfDay(timestamp: Long): Int {
+        val format = SimpleDateFormat("HH")
+        format.timeZone = TimeZone.getTimeZone("GMT+8")
+        val date = Date(timestamp)
+        return format.format(date).toInt()
+    }
+
+
+    private fun sevenDayAgo(): Timestamp {
+        // 創建一個 Calendar 實例
+        val calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8"))
+
+        // 計算並設定 7 天前的日期
+        calendar.add(Calendar.DAY_OF_MONTH, -6)
+
+        // 將日期設定為當天的0時0分0秒
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+
+        // 創建一個 Timestamp 物件，表示 7 天前的日期的0時
+        return Timestamp((calendar.time))
+    }
+
 
     data class StateData(
-        val nState: Int,
-        val sState: Int,
-        val vState: Int,
-        val fState: Int,
-        val qState: Int
+        var nState: Int,
+        var sState: Int,
+        var vState: Int,
+        var fState: Int,
+        var qState: Int
     )
+
+    data class RecordData(
+        val state: String,
+        val hour: Int
+    )
+
 
 }
