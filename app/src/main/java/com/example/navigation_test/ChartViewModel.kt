@@ -28,18 +28,19 @@ class ChartViewModel : ViewModel() {
         _mbListData.clear()
         for (key in listOfKey) {
             _mbListData[key] = Pair(0f, 0f)
-            _mBitmap[key] = Bitmap.createBitmap(872, 440, Bitmap.Config.ARGB_8888)
+//            _mBitmap[key] = Bitmap.createBitmap(872, 440, Bitmap.Config.ARGB_8888)
+            _mBitmap[key] = Bitmap.createBitmap(436, 247, Bitmap.Config.ARGB_8888)
         }
     }
     //大圖用
     fun initUsrIdKey(userId : String){
         _mbListData[userId] = Pair(0f, 0f)
-        _mBitmap[userId] = Bitmap.createBitmap(872, 440, Bitmap.Config.ARGB_8888)
+        _mBitmap[userId] = Bitmap.createBitmap(570, 270, Bitmap.Config.ARGB_8888)
     }
     //小圖用
     fun initUsrIdData(userId : String){
         _mbListData[userId] = Pair(0f, 0f)
-        _mBitmap[userId] = Bitmap.createBitmap(872, 440, Bitmap.Config.ARGB_8888)
+        _mBitmap[userId] = Bitmap.createBitmap(436, 247, Bitmap.Config.ARGB_8888)
     }
 
     fun getListData(key: String): Pair<Float, Float> {
@@ -47,6 +48,6 @@ class ChartViewModel : ViewModel() {
     }
 
     fun getBitmap(key: String): Bitmap {
-        return _mBitmap[key] ?: Bitmap.createBitmap(873, 440, Bitmap.Config.ARGB_8888)
+        return _mBitmap[key] ?: Bitmap.createBitmap(436, 247, Bitmap.Config.ARGB_8888)
     }
 }

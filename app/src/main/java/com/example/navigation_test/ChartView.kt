@@ -2,6 +2,7 @@ package com.example.navigation_test
 
 import android.graphics.drawable.ShapeDrawable
 import android.graphics.drawable.shapes.RectShape
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -70,7 +71,7 @@ fun ChartItem(
             dbViewModel = dbViewModel,
             chartViewModel = chartViewModel, state = state , apneaState = apneaState
         ) {
-            chartViewModel.initUsrIdKey(usrId)
+            chartViewModel.initUsrIdData(usrId)
             isExtend = !isExtend
         }
     } else {
@@ -184,6 +185,7 @@ fun ChartView(
             var nextY = 0f
             val canvasWidth = size.width
             val canvasHeight = size.height
+            Log.d("canvas", "width: $canvasWidth, height: $canvasHeight")
             val maskStart = viewModel.getListData(userId).first
             var maskEnd = (viewModel.getListData(userId).first + 10 * speed)
 
