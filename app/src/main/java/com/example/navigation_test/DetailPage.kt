@@ -1,6 +1,5 @@
 package com.example.navigation_test
 
-import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,6 +24,7 @@ import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.outlined.KeyboardArrowRight
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -140,6 +140,7 @@ fun TabField(
             selectedIcon = Icons.Filled.Info
         )
     )
+    var demoCheck by remember { mutableStateOf(false) }
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val pagerState = rememberPagerState { tabItems.size }
     val selectDate = remember { mutableStateOf(getCurrentDate()) }
@@ -147,6 +148,7 @@ fun TabField(
     val arymaCount by detailViewModel.arymaCount.observeAsState()
     val dataComplete by detailViewModel.dataComplete.observeAsState()
     val sevenDaysData by detailViewModel.sevenDaysData.observeAsState()
+    val sevenDaysApnea by detailViewModel.sevenDaysApnea.observeAsState()
     val dateRange = (-6..0).map {
         val calendar = Calendar.getInstance()
         calendar.add(Calendar.DAY_OF_MONTH, it)
@@ -419,6 +421,16 @@ fun TabField(
                             .fillMaxSize()
                             .verticalScroll(rememberScrollState())
                     ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 10.dp, start = 10.dp, end = 10.dp),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            Button(onClick = { demoCheck = !demoCheck }) {
+                                Text(text = if(demoCheck) "DEMO ON" else "DEMO OFF")
+                            }
+                        }
                         Text(
                             text = "心律狀況",
                             fontSize = 22.sp,
@@ -450,25 +462,25 @@ fun TabField(
                                                 dateRange[dateRange.indexOf(selectDate.value) - 1]
                                     },
                                     modifier = Modifier
-                                        .size(50.dp)
+                                        .size(60.dp)
                                         .padding(start = 10.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.KeyboardArrowLeft,
                                         contentDescription = null,
                                         tint = Color.Black,
-                                        modifier = Modifier.size(30.dp)
+                                        modifier = Modifier.size(40.dp)
                                     )
                                 }
                                 Text(
                                     text =
                                     if (selectDate.value == getCurrentDate())
                                         "今日" else selectDate.value,
-                                    fontSize = 22.sp,
+                                    fontSize = 23.sp,
                                     modifier = Modifier
                                         .width(200.dp)
                                         .padding(
-                                            top = 8.dp
+                                            top = 10.dp
                                         ),
                                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                 )
@@ -478,13 +490,13 @@ fun TabField(
                                             selectDate.value =
                                                 dateRange[dateRange.indexOf(selectDate.value) + 1]
                                     },
-                                    modifier = Modifier.size(50.dp)
+                                    modifier = Modifier.size(60.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.KeyboardArrowRight,
                                         contentDescription = null,
                                         tint = Color.Black,
-                                        modifier = Modifier.size(30.dp)
+                                        modifier = Modifier.size(40.dp)
                                     )
                                 }
                             }
@@ -494,6 +506,7 @@ fun TabField(
                             ) {
                                 sevenDaysData?.let {
                                     VerticalStackedBarChart(
+                                        demoCheck,
                                         selectDate.value,
                                         it
                                     )
@@ -544,15 +557,32 @@ fun TabField(
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(300.dp)
+                                .height(1550.dp)
                                 .clip(RoundedCornerShape(20.dp))
                                 .padding(15.dp)
                         ) {
                             Text(
                                 text = "病患歷史狀態分佈",
                                 fontSize = 22.sp,
-                                modifier = Modifier.padding(10.dp)
+                                modifier = Modifier.padding(
+                                    top = 10.dp,
+                                    start = 10.dp,
+                                    bottom = 30.dp,
+                                    end = 10.dp
+                                ),
                             )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(60.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                ApneaStateLabel("正常 AHI<5 次/小時", Color.Green)
+                                ApneaStateLabel("輕度 5≤AHI<15 次/小時", Color.Yellow)
+                                ApneaStateLabel("重度 AHI≥15次/小時", Color.Red)
+                            }
+                            sevenDaysApnea?.let { SleepMeasurementScreen(dateRange,demoCheck, it) }
                         }
                     }
             }

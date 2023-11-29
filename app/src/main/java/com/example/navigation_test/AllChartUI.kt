@@ -38,7 +38,6 @@ import co.yml.charts.ui.barchart.models.SelectionHighlightData
 import co.yml.charts.ui.piechart.charts.PieChart
 import co.yml.charts.ui.piechart.models.PieChartConfig
 import co.yml.charts.ui.piechart.models.PieChartData
-import kotlin.random.Random
 
 @Composable
 fun HourArymaCountChart(arymaCount: DetailViewModel.StateData) {
@@ -144,14 +143,15 @@ fun HourApneaCountChart(apneaCount: Int, sum: Int): Float {
 
 @Composable
 fun VerticalStackedBarChart(
+    demoCheck: Boolean,
     day: String,
     armyHistoryData: Map<String, List<DetailViewModel.StateData>>
 ) {
-    if (!armyHistoryData.containsKey(day)) {
-        return
+    if (!armyHistoryData.containsKey(day) && !demoCheck) {
+        NoData()
     } else {
+        val groupBarData = if(demoCheck)  DataUtils.getGroupBarChartData(24, 25, 5) else getGroupBarData(armyHistoryData[day] ?: listOf())
         val listSize = 24
-        val groupBarData = getGroupBarData(armyHistoryData[day] ?: listOf())
         val xAxisData = AxisData.Builder()
             .labelAndAxisLinePadding(10.dp)
             .axisStepSize(60.dp)
@@ -279,6 +279,30 @@ fun HistoryChartLabelText(labelText: String, color: Color) {
         Text(
             text = labelText,
             fontSize = 16.sp,
+            color = Color.Black,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.padding(start = 25.dp))
+    }
+}
+
+@Composable
+fun ApneaStateLabel(labelText: String, color: Color) {
+    Row(
+        modifier = Modifier
+            .fillMaxHeight()
+    ) {
+        Spacer(modifier = Modifier.padding(start = 25.dp))
+        Box(
+            modifier = Modifier
+                .size(25.dp)
+                .padding(top = 5.dp)
+                .background(color = color)
+        )
+        Spacer(modifier = Modifier.padding(start = 10.dp))
+        Text(
+            text = labelText,
+            fontSize = 20.sp,
             color = Color.Black,
             textAlign = TextAlign.Center
         )

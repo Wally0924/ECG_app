@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.Filter
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
@@ -23,6 +24,8 @@ import java.util.TimeZone
 class DetailViewModel(usrId: String) : ViewModel() {
     private var _sevenDaysData = MutableLiveData(mapOf<String, List<StateData>>())
     val sevenDaysData: LiveData<Map<String, List<StateData>>> = _sevenDaysData
+    private var _sevenDaysApnea = MutableLiveData(mapOf<String, List<Int>>())
+    val sevenDaysApnea: LiveData<Map<String, List<Int>>> = _sevenDaysApnea
 
     var apneaRecordSum = 0
     private val _dataComplete = MutableLiveData(false)
@@ -45,7 +48,7 @@ class DetailViewModel(usrId: String) : ViewModel() {
         _arymaCount.value = StateData(0, 0, 0, 0, 0)
         apneaRecordSum = 0
         listenData()
-//        historyListenData()
+        historyListenData()
     }
 
     private fun listenData() {
@@ -69,7 +72,6 @@ class DetailViewModel(usrId: String) : ViewModel() {
             // 在主線程中更新 UI
             withContext(Dispatchers.Main) {
                 for (document in apneaQuery) {
-                    Log.d("apneaQuery", "${apneaQuery.size()}")
                     val state = document.data["state"] as Number
                     //算正常的次數
                     if (state.toInt() == 0) {
@@ -78,7 +80,6 @@ class DetailViewModel(usrId: String) : ViewModel() {
                 }
                 apneaRecordSum = apneaQuery.size()
                 for (document in arymaQuery) {
-                    Log.d("apneaQuery", "${arymaQuery.size()}")
                     val state = document.data["state"] as? String
                     state?.let {
                         when (state) {
@@ -104,20 +105,28 @@ class DetailViewModel(usrId: String) : ViewModel() {
         }
     }
 
-    fun historyListenData() {
+    private fun historyListenData() {
         val currentTime = Timestamp.now()
         val sevenDayAgoTime = sevenDayAgo()
         CoroutineScope(Dispatchers.IO).launch {
-            val query = queryAryma
+            val arymaQuery = queryAryma
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .whereLessThanOrEqualTo("timestamp", currentTime)
                 .whereGreaterThanOrEqualTo("timestamp", sevenDayAgoTime)
-            val querySnapshot = query.get().await()
+            val apneaQuery = queryApnea
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .whereLessThanOrEqualTo("timestamp", currentTime)
+                .whereGreaterThanOrEqualTo("timestamp", sevenDayAgoTime)
+            val querySnapshot = arymaQuery.get().await()
+            val querySnapshotApnea = apneaQuery.get().await()
             Log.d("apneaQuery", "${querySnapshot.size()}")
+            Log.d("apneaQuery", "${querySnapshotApnea.size()}")
             val newSevenDaysData = buildNewSevenDaysData(querySnapshot)
+            val newSevenDaysApnea = buildApneaSevenDaysData(querySnapshotApnea)
 
             withContext(Dispatchers.Main) {
                 _sevenDaysData.value = newSevenDaysData
+                _sevenDaysApnea.value = newSevenDaysApnea
             }
 
         }
@@ -150,6 +159,27 @@ class DetailViewModel(usrId: String) : ViewModel() {
                     "Q" -> newSevenDaysData[dateKey]?.get(hourOfDay)?.qState =
                         newSevenDaysData[dateKey]?.get(hourOfDay)?.qState?.plus(1) ?: 0
                 }
+            }
+        }
+        return newSevenDaysData
+    }
+
+    private fun buildApneaSevenDaysData(querySnapshot: QuerySnapshot): Map<String, List<Int>> {
+        val newSevenDaysData = mutableMapOf<String, List<Int>>()
+
+        for (document in querySnapshot.documents) {
+            val dataTimestamp = document.getTimestamp("timestamp")
+            val state = document.data?.get("state") as Number
+
+            if (dataTimestamp != null && state.toInt() == 1) {
+                val dateKey = dateFormat(dataTimestamp.toDate())
+                val hourOfDay = calculateHourOfDay(dataTimestamp.seconds * 1000)
+
+                // 取得對應日期的列表，若不存在則創建一個
+                val dataList = newSevenDaysData.getOrPut(dateKey) { MutableList(24) { 0 } }.toMutableList()
+                dataList[hourOfDay] = dataList[hourOfDay] + 1
+                Log.d("apneaQuery", "$dataList")
+                newSevenDaysData[dateKey] = dataList
             }
         }
         return newSevenDaysData

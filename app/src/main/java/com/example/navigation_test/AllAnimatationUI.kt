@@ -81,3 +81,27 @@ fun Waiting() {
         )
     }
 }
+
+@Composable
+fun NoData() {
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.nodata))
+    val isPlaying by remember { mutableStateOf(true) }
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        isPlaying = isPlaying,
+        iterations = LottieConstants.IterateForever
+    )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        LottieAnimation(
+            modifier = Modifier.size(300.dp),
+            composition = composition,
+            progress = progress
+        )
+    }
+}

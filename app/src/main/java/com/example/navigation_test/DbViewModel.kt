@@ -83,64 +83,68 @@ class DataBaseViewModel(usrId: String) : ViewModel() {
 
     private fun listenData() {
         CoroutineScope(Dispatchers.Main).launch {
-            try {
-                query.addSnapshotListener { value, e ->
+            query.addSnapshotListener { value, e ->
+                if (e != null) {
+                    Log.w(ContentValues.TAG, "Listen failed.", e)
+                    return@addSnapshotListener
+                }
+
+                if (value != null) {
                     if (!isFirstDataFetch) {
-                        if(_apneaState.value == "尚未連線") {
+                        Log.d("firsttime", "開始讀取資料")
+                        if (_apneaState.value == "尚未連線") {
                             updateApneaState("測量中")
                         }
                         val dataList = mutableListOf<ByteArray>() // 創建一個列表來存儲數據
-                        if (e != null) {
-                            Log.w(ContentValues.TAG, "Listen failed.", e)
-                            return@addSnapshotListener
-                        }
-
-                        if (value != null) {
-                            for (document in value) {
-                                val btlist = document.data["heartbeat"] as List<Byte>
-                                val data = splitDataArray(btlist)
-                                dataList.addAll(data) // 將數據添加到列表中
-                                val state = document.data["state"] as String
-                                if (!isFirstDataFetch) {
-                                    updateState(state)
-                                    resetTimer() // 重置計時器
-                                }
+                        for (document in value) {
+                            val btlist = document.data["heartbeat"] as List<Byte>
+                            val data = splitDataArray(btlist)
+                            dataList.addAll(data) // 將數據添加到列表中
+                            val state = document.data["state"] as? String
+                            if (state != null) {
+                                updateState(state)
                             }
+                            resetTimer() // 重置計時器
                         }
                         // 在處理完所有數據後，一次性將它們添加到隊列
                         for (byteArray in dataList) {
                             addQueue(byteArray)
                         }
                     } else {
+                        if(isFirstDataFetch)
+                            Log.d("firsttime", "首次讀取資料")
+
                         isFirstDataFetch = false // 將首次讀取標誌設為 false，以後的資料都會被處理
+
+                        if(!isFirstDataFetch)
+                            Log.d("firsttime", "非首次讀取資料")
                     }
                 }
-                Apneaquery.addSnapshotListener { value, e ->
+            }
+
+            Apneaquery.addSnapshotListener { value, e ->
+                if (e != null) {
+                    Log.w(ContentValues.TAG, "Listen failed.", e)
+                    return@addSnapshotListener
+                }
+
+                if (value != null) {
                     if (!isFirstDataApnea) {
-                        if (e != null) {
-                            Log.w(ContentValues.TAG, "Listen failed.", e)
-                            return@addSnapshotListener
-                        }
-                        if (value != null) {
-                            for (document in value) {
-                                val state = document.data["state"] as Number
-                                if (state.toInt() == 0) {
-                                    updateApneaState("正常")
-                                } else {
-                                    updateApneaState("異常")
-                                }
+                        for (document in value) {
+                            val state = document.data["state"] as Number
+                            if (state.toInt() == 0) {
+                                updateApneaState("正常")
+                            } else {
+                                updateApneaState("異常")
                             }
                         }
                     } else {
                         isFirstDataApnea = false
                     }
                 }
-            } catch (e: Exception) {
-                Log.d(ContentValues.TAG, "Error getting documents: ", e)
             }
         }
     }
-
 
     private fun splitDataArray(data: List<Byte>): MutableList<ByteArray> {
         val result = mutableListOf<ByteArray>()
