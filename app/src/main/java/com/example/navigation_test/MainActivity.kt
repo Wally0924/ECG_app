@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Typeface
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -15,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationRail
@@ -24,6 +26,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -36,11 +39,31 @@ import androidx.navigation.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import co.yml.charts.axis.AxisData
+import co.yml.charts.axis.Gravity
+import co.yml.charts.common.model.Point
+import co.yml.charts.common.utils.DataUtils
+import co.yml.charts.ui.barchart.StackedBarChart
+import co.yml.charts.ui.barchart.models.BarPlotData
+import co.yml.charts.ui.barchart.models.BarStyle
+import co.yml.charts.ui.barchart.models.GroupBarChartData
+import co.yml.charts.ui.barchart.models.SelectionHighlightData
+import co.yml.charts.ui.bubblechart.BubbleChart
+import co.yml.charts.ui.bubblechart.model.BubbleChartData
+import co.yml.charts.ui.linechart.getMaxElementInYAxis
+import co.yml.charts.ui.linechart.model.GridLines
 import com.example.navigation_test.ui.theme.Navigation_testTheme
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
+
 
 class MainActivity : ComponentActivity() {
     private lateinit var mAuth: FirebaseAuth
@@ -182,7 +205,7 @@ fun MainView(email: String?, signOutClicked: () -> Unit) {
 //                )
 //            }
         ) {
-            Navigation(navController = navController , email = email)
+            Navigation(navController = navController, email = email)
         }
     }
 }
@@ -247,11 +270,11 @@ fun NavRail(navController: NavHostController, signOutClicked: () -> Unit) {
 
 
 @Composable
-fun Navigation(navController: NavHostController , email: String?) {
+fun Navigation(navController: NavHostController, email: String?) {
     NavHost(navController = navController, startDestination = "home") {
         composable("home") {
             Log.d("ChartView", "Home這裡檢查有沒有被重繪")
-            HomeView(navController,email)
+            HomeView(navController, email)
         }
         composable("addMember") {
             AlertDialogSample(navController)
@@ -275,13 +298,42 @@ fun Navigation(navController: NavHostController , email: String?) {
 
 @Composable
 fun HelpScreen() {
-    Log.d("HelpScreen", "HelpScreen重新繪製")
-//    ChartView(
-//        // 將 data 傳遞給 ChartView，當 data 變化時，Compose 會自動重新繪製
-//        viewModel = chartViewModel
-//    )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(50.dp)
+    ) {
+
+        androidx.compose.material3.Card(
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF3E4FF)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                ApneaStateLabel("正常 AHI<5 次/小時", Color.Green)
+                ApneaStateLabel("輕度 5≤AHI<15 次/小時", Color.Yellow)
+                ApneaStateLabel("重度 AHI≥15次/小時", Color.Red)
+            }
+        }
+    }
 }
 
+//
+//fun sevenDayAgo(): Timestamp {
+//    // 創建一個 Calendar 實例
+//    val calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8"))
+//
+//    // 計算並設定 7 天前的日期
+//    calendar.add(Calendar.DAY_OF_MONTH, -6)
+//
+//    // 將日期設定為當天的0時0分0秒
+//    calendar.set(Calendar.HOUR_OF_DAY, 0)
+//    calendar.set(Calendar.MINUTE, 0)
+//    calendar.set(Calendar.SECOND, 0)
+//    calendar.set(Calendar.MILLISECOND, 0)
+//
+//    // 創建一個 Timestamp 物件，表示 7 天前的日期的0時
+//    return Timestamp((calendar.time))
+//}
 
 private fun requestSmsPermission(context: Context, onPermissionResult: (Boolean) -> Unit) {
     if (ContextCompat.checkSelfPermission(

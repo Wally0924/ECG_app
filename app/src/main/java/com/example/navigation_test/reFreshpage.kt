@@ -50,35 +50,8 @@ fun reFreshHomepage(
                 mbViewModel.updateData(userID, name.toString())
                 usrList.add(userID)
             }
-//
-//            val fetchTasks = mutableListOf<Deferred<Unit>>()
-//            usrList.forEach { usrId ->
-//                val fetchTask = async(Dispatchers.IO) {
-//                    val ecgDataResult = withContext(Dispatchers.IO) {
-//                        query.document(usrId).collection("Heartbeat_15s").get().await()
-//                    }
-//
-//                    val egDtFloat = ecgDataResult.documents.mapNotNull { ecgData ->
-//                        val list = ecgData.data?.get("heartbeat") as? List<Double>
-//                        list?.map { it.toFloat() }
-//                    }.flatten()
-//
-//                    egDtList[usrId] = egDtFloat
-//                    println(egDtFloat.size)
-//                }
-//                fetchTasks.add(fetchTask)
-//            }
-//
-//            fetchTasks.awaitAll() // 等待所有非同步操作完成
-//            mblist.clear()
             userId.clear()
-//            ecgDataList.clear()
-//            mblist.addAll(mbbList)
             userId.addAll(usrList)
-//            for (usr in usrList) {
-//                egDtList[usr]?.let { ecgDataList.add(it) }
-//            }
-//            chartViewModel.initKey(userId)
             onComplete()
             delay(1000)
         } catch (e: Exception) {
@@ -87,39 +60,6 @@ fun reFreshHomepage(
     }
 }
 
-@Composable
-fun Waiting() {
-    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.lotie))
-    val isPlaying by remember { mutableStateOf(true) }
-    val progress by animateLottieCompositionAsState(
-        composition = composition,
-        isPlaying = isPlaying,
-        iterations = LottieConstants.IterateForever
-    )
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        LottieAnimation(
-            modifier = Modifier.size(400.dp),
-            composition = composition,
-            progress = progress
-        )
-        Text(
-            text = "資料同步中...",
-            style = TextStyle(
-                fontSize = 26.sp,
-                color = Color.Black
-            ),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(16.dp)
-        )
-    }
-}
 
 
 
